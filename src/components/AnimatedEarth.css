@@ -1,0 +1,196 @@
+.earth-wrapper {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+#earth-cont {
+  scale: 0.5;
+  z-index: 1;
+  margin: 0;
+  display: grid;
+  place-items: center;
+  height: 300px;
+  width: 300px;
+  perspective: 10000px;
+  transform-style: preserve-3d;
+  animation: spin 20s linear infinite;
+}
+
+.point {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: #5a90ff;
+  box-shadow: 0 0 2px rgba(255, 255, 255, 0.3);
+  z-index: 100;
+}
+
+@keyframes spin {
+  0% { transform: rotateZ(90deg) rotateX(0deg); }
+  100% { transform: rotateZ(90deg) rotateX(360deg); }
+}
+
+.continent {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  background: radial-gradient(rgba(98, 172, 98, 0.9) 54%, transparent 55%);
+  transform-style: preserve-3d;
+}
+
+/* Point positioning - latitude circles */
+.point:nth-child(n+2):nth-child(-n+13) { transform: rotateX(-60deg) rotateY(calc((var(--i) - 2) * 30deg)) translateZ(150px); }
+.point:nth-child(n+14):nth-child(-n+25) { transform: rotateX(-30deg) rotateY(calc((var(--i) - 14) * 30deg)) translateZ(150px); }
+.point:nth-child(n+26):nth-child(-n+37) { transform: rotateX(0deg) rotateY(calc((var(--i) - 26) * 30deg)) translateZ(150px); }
+.point:nth-child(n+38):nth-child(-n+49) { transform: rotateX(30deg) rotateY(calc((var(--i) - 38) * 30deg)) translateZ(150px); }
+.point:nth-child(n+50):nth-child(-n+61) { transform: rotateX(60deg) rotateY(calc((var(--i) - 50) * 30deg)) translateZ(150px); }
+.point:nth-child(n+62):nth-child(-n+73) { transform: rotateX(90deg) rotateY(calc((var(--i) - 62) * 30deg)) translateZ(150px); }
+
+/* Individual point positions */
+.point:nth-child(2) { transform: rotateX(-60deg) rotateY(0deg) translateZ(150px); }
+.point:nth-child(3) { transform: rotateX(-60deg) rotateY(30deg) translateZ(150px); }
+.point:nth-child(4) { transform: rotateX(-60deg) rotateY(60deg) translateZ(150px); }
+.point:nth-child(5) { transform: rotateX(-60deg) rotateY(90deg) translateZ(150px); }
+.point:nth-child(6) { transform: rotateX(-60deg) rotateY(120deg) translateZ(150px); }
+.point:nth-child(7) { transform: rotateX(-60deg) rotateY(150deg) translateZ(150px); }
+.point:nth-child(8) { transform: rotateX(-60deg) rotateY(180deg) translateZ(150px); }
+.point:nth-child(9) { transform: rotateX(-60deg) rotateY(210deg) translateZ(150px); }
+.point:nth-child(10) { transform: rotateX(-60deg) rotateY(240deg) translateZ(150px); }
+.point:nth-child(11) { transform: rotateX(-60deg) rotateY(270deg) translateZ(150px); }
+.point:nth-child(12) { transform: rotateX(-60deg) rotateY(300deg) translateZ(150px); }
+.point:nth-child(13) { transform: rotateX(-60deg) rotateY(330deg) translateZ(150px); }
+
+.point:nth-child(14) { transform: rotateX(-30deg) rotateY(0deg) translateZ(150px); }
+.point:nth-child(15) { transform: rotateX(-30deg) rotateY(30deg) translateZ(150px); }
+.point:nth-child(16) { transform: rotateX(-30deg) rotateY(60deg) translateZ(150px); }
+.point:nth-child(17) { transform: rotateX(-30deg) rotateY(90deg) translateZ(150px); }
+.point:nth-child(18) { transform: rotateX(-30deg) rotateY(120deg) translateZ(150px); }
+.point:nth-child(19) { transform: rotateX(-30deg) rotateY(150deg) translateZ(150px); }
+.point:nth-child(20) { transform: rotateX(-30deg) rotateY(180deg) translateZ(150px); }
+.point:nth-child(21) { transform: rotateX(-30deg) rotateY(210deg) translateZ(150px); }
+.point:nth-child(22) { transform: rotateX(-30deg) rotateY(240deg) translateZ(150px); }
+.point:nth-child(23) { transform: rotateX(-30deg) rotateY(270deg) translateZ(150px); }
+.point:nth-child(24) { transform: rotateX(-30deg) rotateY(300deg) translateZ(150px); }
+.point:nth-child(25) { transform: rotateX(-30deg) rotateY(330deg) translateZ(150px); }
+
+.point:nth-child(26) { transform: rotateX(0deg) rotateY(0deg) translateZ(150px); }
+.point:nth-child(27) { transform: rotateX(0deg) rotateY(30deg) translateZ(150px); }
+.point:nth-child(28) { transform: rotateX(0deg) rotateY(60deg) translateZ(150px); }
+.point:nth-child(29) { transform: rotateX(0deg) rotateY(90deg) translateZ(150px); }
+.point:nth-child(30) { transform: rotateX(0deg) rotateY(120deg) translateZ(150px); }
+.point:nth-child(31) { transform: rotateX(0deg) rotateY(150deg) translateZ(150px); }
+.point:nth-child(32) { transform: rotateX(0deg) rotateY(180deg) translateZ(150px); }
+.point:nth-child(33) { transform: rotateX(0deg) rotateY(210deg) translateZ(150px); }
+.point:nth-child(34) { transform: rotateX(0deg) rotateY(240deg) translateZ(150px); }
+.point:nth-child(35) { transform: rotateX(0deg) rotateY(270deg) translateZ(150px); }
+.point:nth-child(36) { transform: rotateX(0deg) rotateY(300deg) translateZ(150px); }
+.point:nth-child(37) { transform: rotateX(0deg) rotateY(330deg) translateZ(150px); }
+
+.point:nth-child(38) { transform: rotateX(30deg) rotateY(0deg) translateZ(150px); }
+.point:nth-child(39) { transform: rotateX(30deg) rotateY(30deg) translateZ(150px); }
+.point:nth-child(40) { transform: rotateX(30deg) rotateY(60deg) translateZ(150px); }
+.point:nth-child(41) { transform: rotateX(30deg) rotateY(90deg) translateZ(150px); }
+.point:nth-child(42) { transform: rotateX(30deg) rotateY(120deg) translateZ(150px); }
+.point:nth-child(43) { transform: rotateX(30deg) rotateY(150deg) translateZ(150px); }
+.point:nth-child(44) { transform: rotateX(30deg) rotateY(180deg) translateZ(150px); }
+.point:nth-child(45) { transform: rotateX(30deg) rotateY(210deg) translateZ(150px); }
+.point:nth-child(46) { transform: rotateX(30deg) rotateY(240deg) translateZ(150px); }
+.point:nth-child(47) { transform: rotateX(30deg) rotateY(270deg) translateZ(150px); }
+.point:nth-child(48) { transform: rotateX(30deg) rotateY(300deg) translateZ(150px); }
+.point:nth-child(49) { transform: rotateX(30deg) rotateY(330deg) translateZ(150px); }
+
+.point:nth-child(50) { transform: rotateX(60deg) rotateY(0deg) translateZ(150px); }
+.point:nth-child(51) { transform: rotateX(60deg) rotateY(30deg) translateZ(150px); }
+.point:nth-child(52) { transform: rotateX(60deg) rotateY(60deg) translateZ(150px); }
+.point:nth-child(53) { transform: rotateX(60deg) rotateY(90deg) translateZ(150px); }
+.point:nth-child(54) { transform: rotateX(60deg) rotateY(120deg) translateZ(150px); }
+.point:nth-child(55) { transform: rotateX(60deg) rotateY(150deg) translateZ(150px); }
+.point:nth-child(56) { transform: rotateX(60deg) rotateY(180deg) translateZ(150px); }
+.point:nth-child(57) { transform: rotateX(60deg) rotateY(210deg) translateZ(150px); }
+.point:nth-child(58) { transform: rotateX(60deg) rotateY(240deg) translateZ(150px); }
+.point:nth-child(59) { transform: rotateX(60deg) rotateY(270deg) translateZ(150px); }
+.point:nth-child(60) { transform: rotateX(60deg) rotateY(300deg) translateZ(150px); }
+.point:nth-child(61) { transform: rotateX(60deg) rotateY(330deg) translateZ(150px); }
+
+.point:nth-child(62) { transform: rotateX(90deg) rotateY(0deg) translateZ(150px); }
+.point:nth-child(63) { transform: rotateX(90deg) rotateY(30deg) translateZ(150px); }
+.point:nth-child(64) { transform: rotateX(90deg) rotateY(60deg) translateZ(150px); }
+.point:nth-child(65) { transform: rotateX(90deg) rotateY(90deg) translateZ(150px); }
+.point:nth-child(66) { transform: rotateX(90deg) rotateY(120deg) translateZ(150px); }
+.point:nth-child(67) { transform: rotateX(90deg) rotateY(150deg) translateZ(150px); }
+.point:nth-child(68) { transform: rotateX(90deg) rotateY(180deg) translateZ(150px); }
+.point:nth-child(69) { transform: rotateX(90deg) rotateY(210deg) translateZ(150px); }
+.point:nth-child(70) { transform: rotateX(90deg) rotateY(240deg) translateZ(150px); }
+.point:nth-child(71) { transform: rotateX(90deg) rotateY(270deg) translateZ(150px); }
+.point:nth-child(72) { transform: rotateX(90deg) rotateY(300deg) translateZ(150px); }
+.point:nth-child(73) { transform: rotateX(90deg) rotateY(330deg) translateZ(150px); }
+
+/* Continent positioning */
+.c1 { clip-path: polygon(20% 0%, 90% 15%, 70% 95%, 10% 70%); transform: rotateX(10deg) rotateY(20deg) translateZ(157px); }
+.c2 { clip-path: polygon(15% 10%, 95% 20%, 80% 85%, 5% 70%); transform: rotateX(12deg) rotateY(23deg) translateZ(157px); }
+.c3 { clip-path: polygon(30% 0%, 85% 15%, 90% 80%, 15% 95%); transform: rotateX(8deg) rotateY(18deg) translateZ(157px); }
+.c4 { clip-path: polygon(25% 5%, 100% 25%, 75% 90%, 5% 70%); transform: rotateX(14deg) rotateY(21deg) translateZ(157px); }
+.c5 { clip-path: polygon(10% 25%, 90% 5%, 85% 70%, 30% 95%); transform: rotateX(9deg) rotateY(24deg) translateZ(157px); }
+.c6 { clip-path: polygon(20% 10%, 80% 0%, 95% 70%, 25% 95%); transform: rotateX(11deg) rotateY(16deg) translateZ(157px); }
+.c7 { clip-path: polygon(15% 0%, 95% 20%, 70% 100%, 5% 80%); transform: rotateX(7deg) rotateY(22deg) translateZ(157px); }
+.c8 { clip-path: polygon(25% 0%, 85% 15%, 100% 75%, 15% 95%); transform: rotateX(13deg) rotateY(19deg) translateZ(157px); }
+.c9 { clip-path: polygon(10% 10%, 90% 5%, 80% 85%, 20% 95%); transform: rotateX(10deg) rotateY(26deg) translateZ(157px); }
+.c10 { clip-path: polygon(20% 5%, 95% 25%, 70% 95%, 10% 75%); transform: rotateX(6deg) rotateY(20deg) translateZ(157px); }
+.c11 { clip-path: polygon(15% 5%, 90% 15%, 75% 95%, 5% 80%); transform: rotateX(-20deg) rotateY(60deg) translateZ(157px); }
+.c12 { clip-path: polygon(25% 0%, 85% 20%, 95% 75%, 10% 95%); transform: rotateX(-22deg) rotateY(63deg) translateZ(157px); }
+.c13 { clip-path: polygon(20% 10%, 95% 5%, 85% 80%, 15% 90%); transform: rotateX(-18deg) rotateY(58deg) translateZ(157px); }
+.c14 { clip-path: polygon(30% 0%, 90% 25%, 70% 95%, 5% 70%); transform: rotateX(-21deg) rotateY(64deg) translateZ(157px); }
+.c15 { clip-path: polygon(15% 15%, 100% 10%, 85% 85%, 20% 95%); transform: rotateX(-19deg) rotateY(56deg) translateZ(157px); }
+.c16 { clip-path: polygon(25% 5%, 95% 20%, 75% 90%, 10% 70%); transform: rotateX(-23deg) rotateY(61deg) translateZ(157px); }
+.c17 { clip-path: polygon(20% 0%, 90% 10%, 100% 70%, 15% 95%); transform: rotateX(-17deg) rotateY(59deg) translateZ(157px); }
+.c18 { clip-path: polygon(15% 5%, 85% 20%, 70% 85%, 5% 70%); transform: rotateX(-24deg) rotateY(62deg) translateZ(157px); }
+.c19 { clip-path: polygon(20% 0%, 90% 20%, 80% 90%, 10% 70%); transform: rotateX(40deg) rotateY(-30deg) translateZ(157px); }
+.c20 { clip-path: polygon(25% 5%, 95% 20%, 70% 95%, 5% 70%); transform: rotateX(42deg) rotateY(-28deg) translateZ(157px); }
+.c21 { clip-path: polygon(30% 0%, 85% 15%, 100% 75%, 15% 95%); transform: rotateX(38deg) rotateY(-32deg) translateZ(157px); }
+.c22 { clip-path: polygon(15% 10%, 90% 5%, 80% 85%, 20% 95%); transform: rotateX(43deg) rotateY(-27deg) translateZ(157px); }
+.c23 { clip-path: polygon(20% 5%, 95% 25%, 70% 95%, 10% 75%); transform: rotateX(39deg) rotateY(-29deg) translateZ(157px); }
+.c24 { clip-path: polygon(10% 20%, 90% 10%, 85% 80%, 30% 95%); transform: rotateX(41deg) rotateY(-31deg) translateZ(157px); }
+.c25 { clip-path: polygon(25% 0%, 100% 20%, 75% 90%, 15% 95%); transform: rotateX(44deg) rotateY(-33deg) translateZ(157px); }
+.c26 { clip-path: polygon(15% 15%, 85% 5%, 95% 80%, 20% 95%); transform: rotateX(37deg) rotateY(-34deg) translateZ(157px); }
+.c27 { clip-path: polygon(30% 0%, 90% 15%, 80% 100%, 10% 70%); transform: rotateX(45deg) rotateY(-29deg) translateZ(157px); }
+.c28 { clip-path: polygon(20% 0%, 80% 10%, 95% 70%, 25% 95%); transform: rotateX(36deg) rotateY(-35deg) translateZ(157px); }
+.c29 { clip-path: polygon(30% 0%, 90% 20%, 70% 90%, 10% 70%); transform: rotateX(-10deg) rotateY(150deg) translateZ(157px); }
+.c30 { clip-path: polygon(25% 5%, 85% 15%, 95% 75%, 15% 95%); transform: rotateX(-12deg) rotateY(153deg) translateZ(157px); }
+.c31 { clip-path: polygon(20% 10%, 95% 0%, 80% 85%, 20% 95%); transform: rotateX(-14deg) rotateY(156deg) translateZ(157px); }
+.c32 { clip-path: polygon(10% 20%, 90% 5%, 85% 70%, 30% 95%); transform: rotateX(-16deg) rotateY(159deg) translateZ(157px); }
+.c33 { clip-path: polygon(20% 0%, 85% 15%, 100% 75%, 15% 95%); transform: rotateX(-18deg) rotateY(162deg) translateZ(157px); }
+.c34 { clip-path: polygon(15% 15%, 95% 5%, 90% 85%, 25% 95%); transform: rotateX(-20deg) rotateY(165deg) translateZ(157px); }
+.c35 { clip-path: polygon(30% 0%, 90% 20%, 70% 90%, 10% 70%); transform: rotateX(5deg) rotateY(-150deg) translateZ(157px); }
+.c36 { clip-path: polygon(25% 5%, 95% 20%, 70% 95%, 5% 70%); transform: rotateX(-45deg) rotateY(120deg) translateZ(157px); }
+.c37 { clip-path: polygon(20% 10%, 95% 0%, 85% 85%, 15% 95%); transform: rotateX(50deg) rotateY(90deg) translateZ(157px); }
+.c38 { clip-path: polygon(10% 20%, 90% 5%, 100% 80%, 30% 95%); transform: rotateX(-60deg) rotateY(200deg) translateZ(157px); }
+.c39 { clip-path: polygon(20% 0%, 80% 10%, 90% 70%, 30% 95%); transform: rotateX(25deg) rotateY(-100deg) translateZ(157px); }
+.c40 { clip-path: polygon(15% 0%, 95% 20%, 80% 85%, 10% 70%); transform: rotateX(15deg) rotateY(75deg) translateZ(157px); }
+.c41 { clip-path: polygon(25% 0%, 85% 15%, 95% 75%, 15% 95%); transform: rotateX(-30deg) rotateY(-60deg) translateZ(157px); }
+.c42 { clip-path: polygon(10% 10%, 90% 0%, 80% 80%, 20% 95%); transform: rotateX(35deg) rotateY(140deg) translateZ(157px); }
+.c43 { clip-path: polygon(30% 0%, 90% 25%, 70% 95%, 10% 75%); transform: rotateX(60deg) rotateY(-10deg) translateZ(157px); }
+.c44 { clip-path: polygon(20% 5%, 95% 20%, 85% 80%, 15% 90%); transform: rotateX(-55deg) rotateY(-130deg) translateZ(157px); }
+.c45 { clip-path: polygon(25% 0%, 85% 20%, 70% 90%, 5% 70%); transform: rotateX(0deg) rotateY(30deg) translateZ(157px); }
+.c46 { clip-path: polygon(15% 15%, 95% 5%, 90% 85%, 20% 95%); transform: rotateX(-10deg) rotateY(-170deg) translateZ(157px); }
+.c47 { clip-path: polygon(20% 0%, 80% 15%, 100% 70%, 15% 95%); transform: rotateX(20deg) rotateY(200deg) translateZ(157px); }
+.c48 { clip-path: polygon(30% 0%, 95% 20%, 75% 95%, 10% 70%); transform: rotateX(-25deg) rotateY(15deg) translateZ(157px); }
+.c49 { clip-path: polygon(10% 20%, 90% 0%, 85% 70%, 20% 95%); transform: rotateX(45deg) rotateY(-200deg) translateZ(157px); }
+.c50 { clip-path: polygon(25% 0%, 85% 25%, 95% 75%, 15% 95%); transform: rotateX(-35deg) rotateY(180deg) translateZ(157px); }
+
+@media (max-width: 768px) {
+  #earth-cont {
+    scale: 0.3;
+  }
+}
+
