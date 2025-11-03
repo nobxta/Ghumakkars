@@ -151,20 +151,32 @@ const WhatsApp = () => {
       const data = await response.json();
       if (data.success) {
         console.log('📱 Status update:', data.data);
-        setStatus(data.data.status || 'disconnected');
+        const newStatus = data.data.status || 'disconnected';
+        setStatus(newStatus);
+        
+        // Handle QR code
         if (data.data.qrCode) {
+          console.log('✅ QR Code received in status update');
           setQrCode(data.data.qrCode);
-          if (data.data.status === 'qr_pending') {
-            // Only show success message if QR code is new (wasn't there before)
-            const prevQR = qrCode;
-            if (!prevQR) {
-              setResponse({ type: 'success', text: 'QR Code ready! Scan with WhatsApp to connect.' });
-            }
+          // Auto-show QR code when it's available
+          if (!showQR) {
+            setShowQR(true);
+          }
+          // Ensure status is qr_pending when QR code exists
+          if (newStatus !== 'qr_pending') {
+            console.log('⚠️ QR code exists but status is not qr_pending. Setting status to qr_pending.');
+            setStatus('qr_pending');
+          }
+          // Show success message if QR code is new
+          if (!qrCode) {
+            setResponse({ type: 'success', text: 'QR Code ready! Scan with WhatsApp to connect.' });
           }
         } else {
           // Clear QR code if status changed away from qr_pending
-          if (data.data.status !== 'qr_pending') {
+          if (newStatus !== 'qr_pending' && qrCode) {
+            console.log('📱 Status changed away from qr_pending, clearing QR code');
             setQrCode(null);
+            setShowQR(false);
           }
         }
       } else {
@@ -314,17 +326,16 @@ Thank you!`
       console.log('📱 WhatsApp Login - Response Data:', data);
       
       if (data.success) {
-        setResponse({ type: 'success', text: 'QR Code generation started! Checking status...' });
+        setResponse({ type: 'success', text: 'QR Code generation started! Waiting for QR code...' });
         // Start polling for status updates immediately
         setIsPolling(true);
-        // Fetch status immediately and then continue polling
+        // Fetch status immediately and then rely on existing polling mechanism
         await fetchStatus();
-        // Continue polling every 3 seconds
-        setTimeout(() => {
-          if (!qrCode && status === 'disconnected') {
-            setResponse({ type: 'warning', text: 'QR code is being generated. Please wait...' });
-          }
-        }, 2000);
+        // Set a timeout to check if QR code appeared after 10 seconds
+        setTimeout(async () => {
+          await fetchStatus();
+          // Check again after delay to see if QR code appeared
+        }, 5000);
       } else {
         setResponse({ type: 'error', text: data.message || 'Failed to generate QR code' });
       }
@@ -602,7 +613,7 @@ Thank you!`
 
               {/* QR Code Display */}
               <AnimatePresence>
-                {status === 'qr_pending' && qrCode && (
+                {(status === 'qr_pending' || qrCode) && qrCode && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
@@ -627,22 +638,27 @@ Thank you!`
                       </div>
                     </div>
                     
-                    {showQR && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex flex-col items-center space-y-4"
-                      >
-                        <img 
-                          src={`data:image/png;base64,${qrCode}`} 
-                          alt="WhatsApp QR Code" 
-                          className="border-4 border-blue-500 rounded-xl shadow-lg max-w-full h-auto"
-                        />
-                        <p className="text-sm text-gray-600 text-center">
-                          Scan with WhatsApp → Settings → Linked Devices
-                        </p>
-                      </motion.div>
-                    )}
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex flex-col items-center space-y-4"
+                    >
+                      <img 
+                        src={`data:image/png;base64,${qrCode}`} 
+                        alt="WhatsApp QR Code" 
+                        className="border-4 border-blue-500 rounded-xl shadow-lg max-w-full h-auto w-64"
+                        onError={(e) => {
+                          console.error('❌ QR Code image load error:', e);
+                          setResponse({ type: 'error', text: 'Failed to load QR code image. Please try again.' });
+                        }}
+                      />
+                      <p className="text-sm text-gray-600 text-center">
+                        Scan with WhatsApp → Settings → Linked Devices
+                      </p>
+                      <p className="text-xs text-gray-500 text-center">
+                        This QR code expires in 60 seconds. If it expires, click Login again.
+                      </p>
+                    </motion.div>
                   </motion.div>
                 )}
               </AnimatePresence>
