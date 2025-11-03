@@ -18,37 +18,39 @@ const Terminal = () => {
 
   useEffect(() => {
     // Connect to WebSocket
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-    const socket = io(API_URL, {
-      transports: ['websocket', 'polling'],
-      reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-    });
-    
-    socketRef.current = socket;
+    (async () => {
+      const { API_URL } = await import('../../utils/apiConfig');
+      const socket = io(API_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        reconnectionDelay: 1000,
+      });
+      
+      socketRef.current = socket;
 
-    socket.on('connect', () => {
-      console.log('✅ Terminal connected to server');
-      setIsConnected(true);
-      socket.emit('join-admin-terminal');
-    });
+      socket.on('connect', () => {
+        console.log('✅ Terminal connected to server');
+        setIsConnected(true);
+        socket.emit('join-admin-terminal');
+      });
 
-    socket.on('disconnect', () => {
-      console.log('❌ Terminal disconnected');
-      setIsConnected(false);
-    });
+      socket.on('disconnect', () => {
+        console.log('❌ Terminal disconnected');
+        setIsConnected(false);
+      });
 
-    socket.on('log', (log) => {
-      setLogs(prev => [log, ...prev].slice(0, 1000)); // Keep last 1000 logs
-    });
+      socket.on('log', (log) => {
+        setLogs(prev => [log, ...prev].slice(0, 1000)); // Keep last 1000 logs
+      });
 
-    socket.on('clear', () => {
-      setLogs([]);
-    });
+      socket.on('clear', () => {
+        setLogs([]);
+      });
 
-    // Fetch initial logs
-    fetchLogs();
+      // Fetch initial logs
+      fetchLogs();
+    })();
 
     return () => {
       if (socketRef.current) {
@@ -67,7 +69,7 @@ const Terminal = () => {
   const fetchLogs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const { API_URL } = await import('../../utils/apiConfig');
       
       const response = await fetch(`${API_URL}/api/terminal/logs?limit=100`, {
         headers: {
@@ -90,7 +92,7 @@ const Terminal = () => {
   const clearLogs = async () => {
     try {
       const token = localStorage.getItem('token');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const { API_URL } = await import('../../utils/apiConfig');
       
       await fetch(`${API_URL}/api/terminal/clear`, {
         method: 'POST',

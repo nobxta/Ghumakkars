@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import tripService from '../services/tripService';
 import reviewService from '../services/reviewService';
+import { API_URL } from '../utils/apiConfig';
 import {
   ArrowLeft, Star, Share2, Calendar, MapPin, Users, Clock,
   Check, ChevronDown, Image, List, Info, MessageCircle,
@@ -730,7 +731,7 @@ const PastTripDetails = () => {
                               ? URL.createObjectURL(image)
                               : (typeof image === 'string' 
                                   ? (image.startsWith('http') || image.startsWith('/uploads') 
-                                      ? image.startsWith('http') ? image : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${image.startsWith('/') ? image : `/${image}`}`
+                                      ? image.startsWith('http') ? image : `${API_URL}${image.startsWith('/') ? image : `/${image}`}`
                                       : image)
                                   : image);
                             
@@ -912,7 +913,7 @@ const PastTripDetails = () => {
                                 ? (image.startsWith('http') 
                                     ? image 
                                     : (image.startsWith('/uploads') 
-                                        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}${image}`
+                                        ? `${API_URL}${image}`
                                         : image))
                                 : image;
                               

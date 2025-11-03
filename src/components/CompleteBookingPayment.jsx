@@ -135,7 +135,8 @@ const CompleteBookingPayment = () => {
               throw new Error('No authentication token found');
             }
 
-            const verifyResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/payments/complete-remaining-payment`, {
+            const { API_BASE_URL } = await import('../utils/apiConfig');
+            const verifyResponse = await fetch(`${API_BASE_URL}/payments/complete-remaining-payment`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

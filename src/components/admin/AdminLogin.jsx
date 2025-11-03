@@ -23,7 +23,11 @@ const AdminLogin = () => {
 
     try {
       // Use real authentication API
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const { API_BASE_URL } = await import('../../utils/apiConfig');
+      console.log('🔐 Admin Login - API URL:', API_BASE_URL);
+      console.log('🔐 Admin Login - Email:', formData.email);
+      
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -34,10 +38,28 @@ const AdminLogin = () => {
         })
       });
 
+      console.log('🔐 Login Response Status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔐 Login Error Response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          setError(errorData.message || `Login failed (${response.status})`);
+        } catch {
+          setError(`Login failed: ${response.status} ${response.statusText}`);
+        }
+        setLoading(false);
+        return;
+      }
+
       const data = await response.json();
+      console.log('🔐 Login Response Data:', data);
 
       if (data.success && data.data && data.data.user) {
         const user = data.data.user;
+        console.log('🔐 User Role:', user.role);
+        console.log('🔐 Full User Object:', user);
         
         // Check if user is admin
         if (user.role === 'admin') {
@@ -45,17 +67,20 @@ const AdminLogin = () => {
           localStorage.setItem('token', data.data.token);
           localStorage.setItem('user', JSON.stringify(user));
           
+          console.log('✅ Admin login successful, redirecting...');
           // Redirect to admin dashboard
           navigate('/admin/dashboard');
         } else {
-          setError('Access denied. Admin privileges required.');
+          console.warn('❌ User is not admin. Role:', user.role);
+          setError(`Access denied. Admin privileges required. Your role: ${user.role || 'not set'}`);
         }
       } else {
+        console.error('❌ Login failed:', data);
         setError(data.message || 'Invalid admin credentials');
       }
     } catch (error) {
-      console.error('Login error:', error);
-      setError('Login failed. Please try again.');
+      console.error('❌ Login error:', error);
+      setError(`Login failed: ${error.message}. Please check your connection and API URL.`);
     }
     
     setLoading(false);
@@ -144,13 +169,6 @@ const AdminLogin = () => {
               </button>
             </div>
           </form>
-
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800 font-medium mb-2">Demo Credentials:</p>
-            <p className="text-xs text-yellow-700">Email: admin@ghumakkars.in</p>
-            <p className="text-xs text-yellow-700">Password: admin123</p>
-          </div>
 
           {/* Back to Main Site */}
           <div className="mt-6 text-center">

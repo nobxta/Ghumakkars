@@ -2,7 +2,8 @@ import { createContext, useContext, useReducer, useEffect } from 'react';
 import axios from 'axios';
 
 // Set up axios base URL
-axios.defaults.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../utils/apiConfig';
+axios.defaults.baseURL = API_URL;
 
 const AuthContext = createContext();
 

@@ -470,6 +470,14 @@ const LandingPage = () => {
                 </>
               ) : (
                 <>
+                  {/* Mobile Login Button */}
+                  <Link 
+                    to="/auth" 
+                    className="md:hidden bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-full font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
+                  >
+                    Login
+                  </Link>
+
                   {/* Mobile Menu Toggle */}
                   <button
                     onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -484,13 +492,14 @@ const LandingPage = () => {
                     </svg>
                   </button>
 
-                <Link 
-                  to="/auth" 
+                  {/* Desktop Login Button */}
+                  <Link 
+                    to="/auth" 
                     className="hidden md:block group relative overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2.5 rounded-full font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
-                >
+                  >
                     <span className="relative z-10">Login</span>
                     <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
-                </Link>
+                  </Link>
                 </>
               )}
             </div>
@@ -542,6 +551,14 @@ const LandingPage = () => {
                   </>
                 ) : (
                   <>
+                    <Link 
+                      to="/auth" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-4 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 font-semibold text-center shadow-md"
+                    >
+                      Login / Sign Up
+                    </Link>
+                    <div className="border-t border-gray-200 my-2"></div>
                     <a 
                       href="#destinations" 
                       onClick={() => setIsMobileMenuOpen(false)}

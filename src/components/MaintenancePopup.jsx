@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Clock, RefreshCw, X } from 'lucide-react';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '../utils/apiConfig';
 
 const MaintenancePopup = ({ isOpen, onClose, maintenanceData }) => {
   const [checkingStatus, setCheckingStatus] = useState(false);

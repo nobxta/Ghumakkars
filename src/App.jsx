@@ -45,6 +45,7 @@ import Terminal from './components/admin/Terminal'
 import WhatsApp from './components/admin/WhatsApp'
 import BookingDetailsPage from './components/admin/BookingDetailsPage'
 import UserDetails from './components/admin/UserDetails'
+import NotFound from './components/NotFound'
 import './App.css'
 
 // Main App component with routing
@@ -191,8 +192,8 @@ const AppContent = () => {
           </AdminLayout>
         } />
         
-        {/* Catch all route */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        {/* 404 Not Found */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   )

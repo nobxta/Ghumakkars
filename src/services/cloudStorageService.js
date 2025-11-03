@@ -29,7 +29,7 @@ class CloudStorageService {
       formData.append('image', file);
 
       // Upload to backend endpoint
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const { API_URL } = await import('../utils/apiConfig');
       const uploadUrl = `${API_URL}/api/user/upload-image`;
       
       console.log('Uploading to:', uploadUrl);
@@ -96,7 +96,7 @@ class CloudStorageService {
   async deleteImage(publicId) {
     try {
       // Call backend API to delete image from Cloudinary
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+      const { API_URL } = await import('../utils/apiConfig');
       const deleteUrl = `${API_URL}/api/user/delete-image`;
       
       const response = await fetch(deleteUrl, {

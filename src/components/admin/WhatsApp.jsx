@@ -131,7 +131,8 @@ const WhatsApp = () => {
   const fetchStatus = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/whatsapp/status', {
+      const { API_BASE_URL } = await import('../../utils/apiConfig');
+      const response = await fetch(`${API_BASE_URL}/whatsapp/status`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -150,7 +151,8 @@ const WhatsApp = () => {
   const fetchMessageHistory = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/whatsapp/history', {
+      const { API_BASE_URL } = await import('../../utils/apiConfig');
+      const response = await fetch(`${API_BASE_URL}/whatsapp/history`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -168,7 +170,8 @@ const WhatsApp = () => {
   const fetchStats = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/whatsapp/stats', {
+      const { API_BASE_URL } = await import('../../utils/apiConfig');
+      const response = await fetch(`${API_BASE_URL}/whatsapp/stats`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -246,7 +249,8 @@ Thank you!`
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/whatsapp/login', {
+      const { API_BASE_URL } = await import('../../utils/apiConfig');
+      const response = await fetch(`${API_BASE_URL}/whatsapp/login`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -275,7 +279,8 @@ Thank you!`
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/whatsapp/logout', {
+      const { API_BASE_URL } = await import('../../utils/apiConfig');
+      const response = await fetch(`${API_BASE_URL}/whatsapp/logout`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -310,7 +315,8 @@ Thank you!`
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/whatsapp/send', {
+      const { API_BASE_URL } = await import('../../utils/apiConfig');
+      const response = await fetch(`${API_BASE_URL}/whatsapp/send`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
