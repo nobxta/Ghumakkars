@@ -66,7 +66,24 @@ const contactService = {
       const response = await api.post(`/api/contact/admin/${id}/reply`, { message });
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.message || 'Failed to send reply');
+      console.error('Reply to contact error:', error.response?.data);
+      
+      // Handle specific error cases
+      if (error.response?.status === 400) {
+        const errorData = error.response.data;
+        if (errorData.errors && errorData.errors.length > 0) {
+          throw new Error(errorData.errors[0].msg || 'Validation failed');
+        }
+        throw new Error(errorData.message || 'Validation failed');
+      } else if (error.response?.status === 401) {
+        throw new Error('Access denied. Please log in again.');
+      } else if (error.response?.status === 403) {
+        throw new Error('Access denied. Admin role required.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Contact query not found');
+      } else {
+        throw new Error(error.response?.data?.message || 'Failed to send reply');
+      }
     }
   },
 

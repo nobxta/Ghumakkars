@@ -366,7 +366,7 @@ const MyTrips = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-indigo-50 to-blue-50" style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif" }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <motion.div
@@ -375,20 +375,20 @@ const MyTrips = () => {
           transition={{ duration: 0.5 }}
           className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-slate-200/50 p-8 mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-slate-800 mb-2">My Trips</h1>
-              <p className="text-slate-600 text-lg">Manage and view your travel bookings</p>
+              <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mb-2">My Trips</h1>
+              <p className="text-slate-600 text-base sm:text-lg">Manage your travel bookings and reservations</p>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-2xl font-bold text-purple-600">{bookings.length}</p>
-                <p className="text-slate-600">Total Bookings</p>
+            <div className="flex items-center space-x-3 w-full sm:w-auto">
+              <div className="text-right bg-blue-50 px-4 py-2 rounded-xl flex-1 sm:flex-initial">
+                <p className="text-2xl font-bold text-blue-600">{bookings.length}</p>
+                <p className="text-xs sm:text-sm text-slate-600">Total Bookings</p>
               </div>
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="p-3 bg-purple-100 text-purple-600 rounded-xl hover:bg-purple-200 transition-colors duration-200"
+                className="p-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
@@ -438,7 +438,7 @@ const MyTrips = () => {
                 {selectedFilter === 'cancelled' && <XCircle className="w-12 h-12 text-slate-400" />}
                 {selectedFilter === 'all' && <Plane className="w-12 h-12 text-slate-400" />}
               </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-2">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-2">
                 {selectedFilter === 'upcoming' ? 'No Upcoming Trips' : 
                  selectedFilter === 'pending' ? 'No Pending Bookings' :
                  selectedFilter === 'past' ? 'No Past Trips' :
@@ -460,6 +460,7 @@ const MyTrips = () => {
               )}
             </motion.div>
           ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <AnimatePresence>
               {filteredBookings.map((booking, index) => {
                 const statusConfig = getStatusConfig(booking.status, booking.payment.paymentStatus);
@@ -474,323 +475,102 @@ const MyTrips = () => {
                     key={booking._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: index * 0.1 }}
-                    className={`rounded-3xl shadow-xl border overflow-hidden transition-all duration-300 ${
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                    onClick={() => navigate(`/booking-details/${booking._id}`)}
+                    className={`cursor-pointer group relative bg-white rounded-xl border-2 overflow-hidden transition-all duration-300 ${
                       booking.status === 'cancelled' || booking.status === 'rejected' || booking.status === 'terminated' || booking.status === 'expired'
-                        ? 'bg-gray-50/90 backdrop-blur-xl border-gray-300/50 opacity-75 hover:shadow-lg'
-                        : 'bg-white/90 backdrop-blur-xl border-slate-200/50 hover:shadow-2xl'
+                        ? 'border-gray-300 bg-gray-50/50 hover:border-gray-400'
+                        : booking.status === 'confirmed' 
+                        ? 'border-emerald-200 hover:border-emerald-400 hover:shadow-xl' 
+                        : booking.status === 'pending'
+                        ? 'border-orange-200 hover:border-orange-400 hover:shadow-xl'
+                        : 'border-blue-200 hover:border-blue-400 hover:shadow-xl'
                     }`}
                   >
-                    <div className="flex flex-col lg:flex-row">
-                      {/* Trip Image */}
-                      <div className="lg:w-1/3">
-                        <img
-                          src={booking.trip?.coverImage || 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=500'}
-                          alt={booking.trip?.title}
-                          className="w-full h-64 lg:h-full object-cover"
-                        />
+                    {/* Gradient Overlay on Hover */}
+                    {!(booking.status === 'cancelled' || booking.status === 'rejected' || booking.status === 'terminated' || booking.status === 'expired') && (
+                      <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    )}
+                    
+                    <div className="relative p-4">
+                      {/* Header with Title and Status */}
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-base font-bold text-slate-900 line-clamp-2 flex-1 pr-2 group-hover:text-blue-600 transition-colors">
+                          {booking.trip?.title}
+                        </h3>
+                        <div className="ml-2 flex items-center">
+                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
+                            booking.status === 'confirmed' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' :
+                            booking.status === 'pending' ? 'bg-orange-50 text-orange-700 border border-orange-200' :
+                            booking.status === 'cancelled' ? 'bg-red-50 text-red-700 border border-red-200' :
+                            'bg-gray-50 text-gray-700 border border-gray-200'
+                          }`}>
+                            {booking.status === 'confirmed' && <CheckCircle className="w-3.5 h-3.5 mr-1" />}
+                            {booking.status === 'pending' && <Clock className="w-3.5 h-3.5 mr-1" />}
+                            {booking.status === 'cancelled' && <XCircle className="w-3.5 h-3.5 mr-1" />}
+                            {booking.status === 'seat_locked' && <Shield className="w-3.5 h-3.5 mr-1" />}
+                            <span className="capitalize">{booking.status.replace('_', ' ')}</span>
+                          </span>
+                        </div>
                       </div>
                       
-                      {/* Booking Details */}
-                      <div className="lg:w-2/3 p-8">
-                        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between mb-4">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="text-2xl font-bold text-slate-800">{booking.trip?.title}</h3>
-                              {booking.status === 'confirmed' && booking.payment.paymentType === 'full' && (
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ delay: 0.2 }}
-                                  className="flex items-center space-x-1 bg-emerald-100 text-emerald-700 px-2 py-1 rounded-full text-xs font-medium"
-                                >
-                                  <CheckCircle className="w-3 h-3" />
-                                  <span>Confirmed</span>
-                                </motion.div>
-                              )}
-                              {booking.payment.paymentType === 'seat_lock' && booking.status === 'pending' && !isExpired && (
-                                <motion.div
-                                  initial={{ scale: 0 }}
-                                  animate={{ scale: 1 }}
-                                  transition={{ delay: 0.3 }}
-                                  className="flex items-center space-x-1 bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium"
-                                >
-                                  <Zap className="w-3 h-3" />
-                                  <span>Seat Locked</span>
-                                </motion.div>
-                              )}
-                            </div>
-                            <p className="text-slate-600 text-lg mb-2 flex items-center">
-                              <MapPin className="w-4 h-4 mr-2" />
-                              {booking.trip?.startLocation} → {booking.trip?.endLocation}
-                            </p>
-                            <div className="flex items-center space-x-4 text-sm text-slate-500">
-                              <span className="flex items-center">
-                                <Calendar className="w-4 h-4 mr-1" />
-                                {formatDate(booking.trip?.departureDate || booking.trip?.startDate)}
-                              </span>
-                              <span className="flex items-center">
-                                <Users className="w-4 h-4 mr-1" />
-                                {booking.passengers.length} passenger{booking.passengers.length > 1 ? 's' : ''}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="mt-4 lg:mt-0 flex flex-col items-end space-y-2">
-                            <motion.button
-                              whileHover={{ scale: 1.05 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => showStatusPopup(booking, getBookingStatusType(booking), getStatusMessage(booking))}
-                              className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold border-0 transition-all duration-200 status-badge ${
-                                booking.status === 'confirmed' ? 'badge-confirmed hover:shadow-lg' :
-                                booking.status === 'pending' && booking.payment.paymentType === 'seat_lock' ? 'badge-seat-locked hover:shadow-lg' :
-                                booking.status === 'cancelled' || booking.status === 'rejected' ? 'bg-gray-300 text-gray-700' :
-                                booking.status === 'completed' ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg' :
-                                booking.status === 'terminated' || booking.status === 'expired' ? 'bg-gray-300 text-gray-700' :
-                                'badge-pending hover:shadow-lg'
-                              }`}
-                            >
-                              <StatusIcon className="w-4 h-4 mr-2" />
-                              {statusConfig.text}
-                            </motion.button>
-                            <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${paymentConfig.color}`}>
-                              <PaymentIcon className="w-3 h-3 mr-1" />
-                              {paymentConfig.text}
+                      {/* Route with Icon */}
+                      <div className="flex items-center text-sm text-slate-600 mb-2.5 bg-slate-50/50 rounded-lg px-2 py-1.5">
+                        <MapPin className="w-4 h-4 mr-1.5 text-blue-600" />
+                        <span className="truncate font-medium">
+                          {booking.trip?.startLocation} → {booking.trip?.endLocation}
+                        </span>
+                      </div>
+
+                      {/* Date and Passengers Grid */}
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="flex items-center text-xs text-slate-600 bg-blue-50/50 rounded-lg px-2 py-1.5">
+                          <Calendar className="w-3.5 h-3.5 mr-1.5 text-blue-600" />
+                          <span className="font-medium">{formatDate(booking.trip?.departureDate || booking.trip?.startDate)}</span>
+                        </div>
+                        <div className="flex items-center text-xs text-slate-600 bg-purple-50/50 rounded-lg px-2 py-1.5">
+                          <Users className="w-3.5 h-3.5 mr-1.5 text-purple-600" />
+                          <span className="font-medium">{booking.passengers.length} Passenger{(booking.passengers.length !== 1) ? 's' : ''}</span>
+                        </div>
+                      </div>
+
+                      {/* Amount Card */}
+                      <div className="border-t-2 border-slate-100 pt-3 mt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">Total Amount</span>
+                          <span className="text-lg font-bold text-blue-600">
+                            ₹{booking.payment?.paymentType === 'seat_lock' ? booking.payment?.seatLockAmount : booking.payment?.amount}
+                          </span>
+                        </div>
+                        {booking.payment?.paymentType === 'seat_lock' && (
+                          <div className="flex items-center justify-between mt-1">
+                            <span className="text-xs text-orange-600">Remaining</span>
+                            <span className="text-sm font-semibold text-orange-600">
+                              ₹{booking.payment?.remainingAmount || 0}
                             </span>
                           </div>
-                        </div>
-
-                        {/* Payment Information */}
-                        <div className={`payment-summary-card hover-lift ${
-                          booking.status === 'cancelled' || booking.status === 'rejected' ? 'opacity-60 grayscale' : ''
-                        }`}>
-                          <div className="flex items-center mb-3">
-                            <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl mr-2 sm:mr-3 ${
-                              booking.status === 'cancelled' || booking.status === 'rejected' 
-                                ? 'bg-gray-400' 
-                                : 'bg-gradient-to-br from-blue-500 to-purple-600'
-                            }`}>
-                              <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                            </div>
-                            <h4 className="font-bold text-slate-800 text-sm sm:text-lg">Payment Details</h4>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
-                            <div className={`rounded-lg sm:rounded-xl p-2 sm:p-4 shadow-sm border transition-all ${
-                              booking.status === 'cancelled' || booking.status === 'rejected'
-                                ? 'bg-gray-50 border-gray-200'
-                                : 'bg-gradient-to-br from-emerald-50 to-green-50 border-2 border-emerald-200 hover:shadow-md'
-                            }`}>
-                              <div className="flex items-center mb-1 sm:mb-2">
-                                <CheckCircle className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${
-                                  booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-emerald-600'
-                                }`} />
-                                <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wide ${
-                                  booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-500' : 'text-emerald-700'
-                                }`}>Paid</p>
-                              </div>
-                              <p className={`text-lg sm:text-2xl font-black mb-0.5 sm:mb-1 ${
-                                booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-500' : 'text-emerald-600'
-                              }`}>{formatCurrency(booking.payment.paidAmount || booking.payment.amount)}</p>
-                              <p className={`text-[10px] sm:text-xs font-medium ${
-                                booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-emerald-600'
-                              }`}>
-                                {booking.payment.paymentType === 'full' ? '✓ Full' : '⚡ Seat Lock'}
-                              </p>
-                            </div>
-                            {booking.payment.paymentType === 'seat_lock' && (
-                              <>
-                                <div className={`rounded-lg sm:rounded-xl p-2 sm:p-4 shadow-sm border transition-all ${
-                                  booking.status === 'cancelled' || booking.status === 'rejected'
-                                    ? 'bg-gray-50 border-gray-200'
-                                    : 'bg-gradient-to-br from-orange-50 to-amber-50 border-2 border-orange-200 hover:shadow-md'
-                                }`}>
-                                  <div className="flex items-center mb-1 sm:mb-2">
-                                    <AlertTriangle className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${
-                                      booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-orange-600'
-                                    }`} />
-                                    <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wide ${
-                                      booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-500' : 'text-orange-700'
-                                    }`}>Remaining</p>
-                                  </div>
-                                  <p className={`text-lg sm:text-2xl font-black mb-0.5 sm:mb-1 ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-500' : 'text-orange-600'
-                                  }`}>{formatCurrency(booking.payment.remainingAmount || 0)}</p>
-                                  <p className={`text-[10px] sm:text-xs font-medium ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-orange-600'
-                                  }`}>⚠ Due</p>
-                                </div>
-                                <div className={`rounded-lg sm:rounded-xl p-2 sm:p-4 shadow-sm border transition-all ${
-                                  booking.status === 'cancelled' || booking.status === 'rejected'
-                                    ? 'bg-gray-50 border-gray-200'
-                                    : 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 hover:shadow-md'
-                                }`}>
-                                  <div className="flex items-center mb-1 sm:mb-2">
-                                    <Timer className={`w-3 h-3 sm:w-4 sm:h-4 mr-1 ${
-                                      booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-blue-600'
-                                    }`} />
-                                    <p className={`text-[10px] sm:text-xs font-semibold uppercase tracking-wide ${
-                                      booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-500' : 'text-blue-700'
-                                    }`}>Expires</p>
-                                  </div>
-                                  <p className={`text-lg sm:text-2xl font-black mb-0.5 sm:mb-1 ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-500' : 
-                                    isExpired ? 'text-red-600' : daysUntilExpiry <= 3 ? 'text-orange-600' : 'text-blue-600'
-                                  }`}>
-                                    {isExpired ? '❌' : `⏰ ${daysUntilExpiry}d`}
-                                  </p>
-                                  <p className={`text-[10px] sm:text-xs font-medium ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-blue-600'
-                                  }`}>{formatDate(booking.payment.seatLockExpiry)}</p>
-                                </div>
-                              </>
-                            )}
-                            {booking.payment.paymentType === 'full' && (
-                              <>
-                                <div className={`rounded-lg sm:rounded-xl p-2 sm:p-3 shadow-sm border transition-all ${
-                                  booking.status === 'cancelled' || booking.status === 'rejected'
-                                    ? 'bg-gray-50 border-gray-200'
-                                    : 'bg-white border-slate-200'
-                                }`}>
-                                  <p className={`text-[10px] sm:text-xs mb-1 ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-slate-500'
-                                  }`}>Total</p>
-                                  <p className={`text-lg sm:text-xl font-bold ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-500' : 'text-slate-800'
-                                  }`}>{formatCurrency(booking.payment.amount)}</p>
-                                  <p className={`text-[10px] sm:text-xs mt-1 ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-slate-500'
-                                  }`}>Full booking</p>
-                                </div>
-                                <div className={`rounded-lg sm:rounded-xl p-2 sm:p-3 shadow-sm border transition-all ${
-                                  booking.status === 'cancelled' || booking.status === 'rejected'
-                                    ? 'bg-gray-50 border-gray-200'
-                                    : 'bg-white border-slate-200'
-                                }`}>
-                                  <p className={`text-[10px] sm:text-xs mb-1 ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' ? 'text-gray-400' : 'text-slate-500'
-                                  }`}>Status</p>
-                                  <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                    booking.status === 'cancelled' || booking.status === 'rejected' 
-                                      ? 'bg-gray-200 text-gray-600' 
-                                      : paymentConfig.color
-                                  }`}>
-                                    <PaymentIcon className="w-3 h-3 mr-1" />
-                                    {paymentConfig.text}
-                                  </span>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Alerts */}
-                        {booking.status === 'pending' && booking.payment.paymentType === 'seat_lock' && (
-                          <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="alert-warning"
-                          >
-                            <div className="flex items-start">
-                              <div className="flex-shrink-0">
-                                <div className="p-2 bg-orange-500 rounded-full">
-                                  <AlertTriangle className="w-5 h-5 text-white" />
-                                </div>
-                              </div>
-                              <div className="ml-4 flex-1">
-                                <h4 className="text-orange-900 font-bold text-lg mb-1">⚡ Seat Locked - Payment Required</h4>
-                                <p className="text-orange-800 text-sm leading-relaxed">
-                                  Your seat is locked! Pay remaining <span className="font-black text-orange-900 text-lg">₹{booking.payment.remainingAmount || 0}</span> within <span className="font-black text-orange-900">{getDaysUntilExpiry(booking)} days</span> to confirm your booking, or it will be cancelled.
-                                </p>
-                              </div>
-                            </div>
-                          </motion.div>
                         )}
+                      </div>
 
-                        {booking.payment.paymentType === 'seat_lock' && !isExpired && daysUntilExpiry <= 3 && (
-                          <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4">
-                            <div className="flex items-center">
-                              <Timer className="w-5 h-5 text-orange-600 mr-2" />
-                              <p className="text-orange-800 font-medium">Seat Lock Expiring Soon!</p>
-                            </div>
-                            <p className="text-orange-700 text-sm mt-1">
-                              Your seat lock expires in {daysUntilExpiry} day{daysUntilExpiry !== 1 ? 's' : ''}. 
-                              Please pay the remaining amount to confirm your booking.
-                            </p>
-                          </div>
-                        )}
-
-                        {isExpired && (
-                          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-                            <div className="flex items-center">
-                              <XCircle className="w-5 h-5 text-red-600 mr-2" />
-                              <p className="text-red-800 font-medium">Seat Lock Expired</p>
-                            </div>
-                            <p className="text-red-700 text-sm mt-1">Your seat lock has expired. Please contact support for assistance.</p>
-                          </div>
-                        )}
-
-                        {booking.status === 'cancelled' && booking.adminApproval?.rejectionReason && (
-                          <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
-                            <div className="flex items-start">
-                              <Info className="w-5 h-5 text-red-600 mr-2 mt-0.5" />
-                              <div>
-                                <p className="text-red-800 font-medium">Booking Rejected</p>
-                                <p className="text-red-700 text-sm mt-1">{booking.adminApproval.rejectionReason}</p>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                          <div className="mb-4 lg:mb-0">
-                            <p className="text-slate-600 text-sm">Booking Date: {formatDateTime(booking.bookingDate)}</p>
-                            <p className="text-slate-600 text-sm">Booking ID: #{booking._id.slice(-8)}</p>
-                          </div>
-                          
-                          <div className="flex flex-wrap gap-3">
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              onClick={() => openBookingDetails(booking)}
-                              className="px-6 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-colors font-semibold flex items-center"
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
-                            </motion.button>
-                            
-                            {/* Progress action removed for cleaner UI */}
-                            
-                            {booking.status === 'confirmed' && (
-                              <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="px-6 py-2 bg-emerald-100 text-emerald-700 rounded-xl hover:bg-emerald-200 transition-colors font-semibold flex items-center"
-                              >
-                                <Download className="w-4 h-4 mr-2" />
-                                Download Ticket
-                              </motion.button>
-                            )}
-                            
-                            {booking.payment.paymentType === 'seat_lock' && booking.payment.remainingAmount > 0 && !isExpired && (
-                              <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                onClick={() => showStatusPopup(booking, 'payment_required', 'Complete your payment to confirm your booking')}
-                                className="px-6 py-2 bg-orange-100 text-orange-700 rounded-xl hover:bg-orange-200 transition-colors font-semibold flex items-center"
-                              >
-                                <CreditCard className="w-4 h-4 mr-2" />
-                                Pay Remaining
-                              </motion.button>
-                            )}
-                            
-                            {/* View Reason action removed; reason surfaces inline when available */}
-                          </div>
-                        </div>
+                      {/* View Details Button */}
+                      <div className="mt-3 pt-3 border-t border-slate-100">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/booking-details/${booking._id}`);
+                          }}
+                          className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 text-sm font-semibold shadow-sm hover:shadow-md"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>View Details</span>
+                        </button>
                       </div>
                     </div>
                   </motion.div>
                 );
               })}
             </AnimatePresence>
+            </div>
           )}
         </div>
 
@@ -800,37 +580,41 @@ const MyTrips = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+            className="mt-8 grid grid-cols-2 lg:grid-cols-4 gap-4"
           >
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200/50 p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-4xl font-bold text-blue-600 mb-2">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border-2 border-blue-200 p-6 text-center hover:shadow-lg transition-all duration-300">
+              <Plane className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+              <div className="text-3xl font-bold text-blue-600 mb-1">
                 {bookings.filter(booking => {
                   const tripDate = new Date(booking.trip?.departureDate || booking.trip?.startDate);
                   return tripDate > new Date() && booking.status !== 'cancelled' && booking.status !== 'rejected';
                 }).length}
               </div>
-              <p className="text-slate-600 font-medium">Upcoming Trips</p>
+              <p className="text-sm font-semibold text-blue-700">Upcoming Trips</p>
             </div>
             
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200/50 p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-4xl font-bold text-amber-600 mb-2">
+            <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border-2 border-orange-200 p-6 text-center hover:shadow-lg transition-all duration-300">
+              <Clock className="w-8 h-8 text-orange-600 mx-auto mb-2" />
+              <div className="text-3xl font-bold text-orange-600 mb-1">
                 {bookings.filter(booking => booking.status === 'pending').length}
               </div>
-              <p className="text-slate-600 font-medium">Pending Approval</p>
+              <p className="text-sm font-semibold text-orange-700">Pending</p>
             </div>
             
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200/50 p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-4xl font-bold text-emerald-600 mb-2">
+            <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-xl border-2 border-emerald-200 p-6 text-center hover:shadow-lg transition-all duration-300">
+              <CheckCircle className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+              <div className="text-3xl font-bold text-emerald-600 mb-1">
                 {bookings.filter(booking => booking.status === 'confirmed').length}
               </div>
-              <p className="text-slate-600 font-medium">Confirmed</p>
+              <p className="text-sm font-semibold text-emerald-700">Confirmed</p>
             </div>
             
-            <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200/50 p-6 text-center hover:shadow-xl transition-shadow">
-              <div className="text-4xl font-bold text-purple-600 mb-2">
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl border-2 border-purple-200 p-6 text-center hover:shadow-lg transition-all duration-300">
+              <Calendar className="w-8 h-8 text-purple-600 mx-auto mb-2" />
+              <div className="text-3xl font-bold text-purple-600 mb-1">
                 {bookings.filter(booking => booking.status === 'completed').length}
               </div>
-              <p className="text-slate-600 font-medium">Completed</p>
+              <p className="text-sm font-semibold text-purple-700">Completed</p>
             </div>
           </motion.div>
         )}

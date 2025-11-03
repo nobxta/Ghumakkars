@@ -219,10 +219,10 @@ const UserProfile = () => {
 
   const handleEditProfile = () => {
     setEditData({
-      name: user?.name || '',
+      firstName: user?.firstName || user?.name?.split(' ')[0] || '',
+      lastName: user?.lastName || user?.name?.split(' ').slice(1).join(' ') || '',
       email: user?.email || '',
       phone: user?.phone || '',
-      fullName: user?.fullName || '',
       collegeName: user?.collegeName || '',
       collegeId: user?.collegeId || '',
       dateOfBirth: user?.dateOfBirth ? new Date(user.dateOfBirth).toISOString().split('T')[0] : '',
@@ -294,6 +294,20 @@ const UserProfile = () => {
             filteredEditData[key] = currentValue;
             hasAnyChanges = true;
           }
+        } else if (key === 'firstName') {
+          const currentValue = editData.firstName;
+          const originalValue = user?.firstName || '';
+          if (currentValue !== undefined && currentValue !== originalValue && currentValue !== '') {
+            filteredEditData[key] = currentValue;
+            hasAnyChanges = true;
+          }
+        } else if (key === 'lastName') {
+          const currentValue = editData.lastName;
+          const originalValue = user?.lastName || '';
+          if (currentValue !== undefined && currentValue !== originalValue) {
+            filteredEditData[key] = currentValue || '';
+            hasAnyChanges = true;
+          }
         } else {
           const currentValue = editData[key];
           const originalValue = user?.[key] || '';
@@ -338,7 +352,9 @@ const UserProfile = () => {
       alert('Profile updated successfully!');
     } catch (error) {
       console.error('Error updating profile:', error);
-      alert('Failed to update profile. Please try again.');
+      // Show more specific error message
+      const errorMessage = error.message || 'Failed to update profile. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsSaving(false);
     }
@@ -430,71 +446,78 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-purple-50/30">
       <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
-        {/* Header Card - Enhanced Design */}
-        <div className="relative bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl shadow-lg overflow-hidden mb-4 sm:mb-6">
-          {/* Background Pattern */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute inset-0" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '40px 40px' }}></div>
+        {/* Header Card - Enhanced Design with Glassmorphism */}
+        <div className="relative bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 rounded-3xl shadow-2xl overflow-hidden mb-6 transform transition-all duration-300 hover:shadow-3xl">
+          {/* Animated Background Pattern */}
+          <div className="absolute inset-0 opacity-20">
+            <div className="absolute inset-0 animate-pulse" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '50px 50px' }}></div>
           </div>
           
-          <div className="relative p-4 sm:p-6">
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/10 via-transparent to-transparent"></div>
+          
+          {/* Floating Orbs */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2"></div>
+          <div className="absolute bottom-0 left-0 w-48 h-48 bg-purple-300/20 rounded-full blur-2xl translate-y-1/2 -translate-x-1/2"></div>
+          
+          <div className="relative p-6 sm:p-8">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-0">
                 <div className="relative group">
                   {user?.profilePicture ? (
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 border-white shadow-lg ring-4 ring-white/30">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white/90 shadow-2xl ring-4 ring-white/50 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-3xl">
                       <img
                         src={user.profilePicture}
                         alt="Profile"
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                         onError={(e) => {
                           e.target.style.display = 'none';
                           e.target.nextSibling.style.display = 'flex';
                         }}
                       />
-                      <div className="w-full h-full bg-gradient-to-br from-white to-gray-100 rounded-full flex items-center justify-center hidden">
-                        <span className="text-blue-600 text-2xl sm:text-3xl font-bold">
+                      <div className="w-full h-full bg-gradient-to-br from-white via-blue-50 to-purple-50 rounded-full flex items-center justify-center hidden">
+                        <span className="text-indigo-600 text-3xl sm:text-4xl font-extrabold">
                           {user?.name?.charAt(0) || 'U'}
                         </span>
                       </div>
                     </div>
                   ) : (
-                    <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-white to-gray-100 rounded-full flex items-center justify-center border-4 border-white shadow-lg ring-4 ring-white/30">
-                      <span className="text-blue-600 text-2xl sm:text-3xl font-bold">
+                    <div className="w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-br from-white via-blue-100 to-purple-100 rounded-full flex items-center justify-center border-4 border-white/90 shadow-2xl ring-4 ring-white/50 transform transition-all duration-300 group-hover:scale-105 group-hover:shadow-3xl">
+                      <span className="text-indigo-600 text-3xl sm:text-4xl font-extrabold">
                         {user?.name?.charAt(0) || 'U'}
                       </span>
                     </div>
                   )}
-                  <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-3 border-white rounded-full shadow-sm"></div>
+                  <div className="absolute bottom-0 right-0 w-6 h-6 sm:w-7 sm:h-7 bg-gradient-to-br from-green-400 to-emerald-500 border-3 border-white rounded-full shadow-lg ring-2 ring-white/50 animate-pulse"></div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white truncate drop-shadow-sm">{user?.name || 'User'}</h1>
-                  <p className="text-blue-100 text-xs sm:text-sm truncate flex items-center gap-1.5 mt-0.5">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white truncate drop-shadow-lg mb-1">{user?.name || 'User'}</h1>
+                  <p className="text-white/90 text-sm sm:text-base truncate flex items-center gap-2 mt-1 font-medium">
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                     {user?.email}
                   </p>
                   {user?.phone && (
-                    <p className="text-blue-100 text-xs sm:text-sm flex items-center gap-1.5 mt-0.5">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <p className="text-white/90 text-sm sm:text-base flex items-center gap-2 mt-1.5 font-medium">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                       {user.phone}
                     </p>
                   )}
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/20 text-white backdrop-blur-sm">
-                      <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex flex-wrap items-center gap-2 mt-3">
+                    <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-white/25 text-white backdrop-blur-md shadow-lg border border-white/20 transition-all hover:bg-white/30">
+                      <svg className="w-3.5 h-3.5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                       Joined {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                     </span>
                     {user?.isVerified && (
-                      <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-500 text-white shadow-sm">
-                        <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-green-500 to-emerald-500 text-white shadow-lg border border-green-400/30">
+                        <svg className="w-3.5 h-3.5 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                         </svg>
                         Verified Account
@@ -505,10 +528,10 @@ const UserProfile = () => {
               </div>
               <button 
                 onClick={handleEditProfile}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 font-semibold text-sm shadow-lg hover:shadow-xl transform hover:scale-105"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 bg-white/95 backdrop-blur-sm text-indigo-600 rounded-xl hover:bg-white transition-all duration-300 font-bold text-sm shadow-xl hover:shadow-2xl transform hover:scale-105 border border-white/20 hover:border-white/40"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
                 <span className="hidden sm:inline">Edit Profile</span>
                 <span className="sm:hidden">Edit</span>
@@ -517,17 +540,17 @@ const UserProfile = () => {
           </div>
         </div>
 
-        {/* Navigation Tabs */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-2 mb-4 sm:mb-6">
-          <div className="flex flex-wrap gap-1">
+        {/* Navigation Tabs - Enhanced */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-xl border border-gray-200/50 p-2 mb-6">
+          <div className="flex flex-wrap gap-2">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center justify-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex-1 sm:flex-none ${
+                className={`flex items-center justify-center space-x-1.5 sm:space-x-2 px-3 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all duration-300 flex-1 sm:flex-none transform ${
                   activeTab === tab.id
-                    ? 'bg-blue-600 text-white shadow-sm'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg shadow-purple-500/30 scale-105'
+                    : 'text-gray-700 hover:bg-gray-100/80 hover:scale-105 hover:shadow-md'
                 }`}
               >
                 {getIcon(tab.icon)}
@@ -537,61 +560,61 @@ const UserProfile = () => {
           </div>
         </div>
 
-        {/* Tab Content */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-4 sm:p-6">
+        {/* Tab Content - Enhanced */}
+        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-gray-200/50 p-6 sm:p-8 transform transition-all duration-300 hover:shadow-2xl">
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-4 sm:space-y-6">
               <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Overview</h2>
               
-              {/* Stats Grid */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                <div className="bg-blue-50 rounded-xl p-3 sm:p-4 border border-blue-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              {/* Stats Grid - Enhanced with Glassmorphism */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-2xl p-4 sm:p-5 border border-blue-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xl sm:text-2xl font-bold text-blue-900">{userStats.totalTrips}</p>
-                  <p className="text-blue-600 text-xs sm:text-sm font-medium">Total Trips</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-blue-900 mb-1">{userStats.totalTrips}</p>
+                  <p className="text-blue-700 text-xs sm:text-sm font-semibold">Total Trips</p>
                 </div>
 
-                <div className="bg-green-50 rounded-xl p-3 sm:p-4 border border-green-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                <div className="bg-gradient-to-br from-green-50 to-emerald-100/50 rounded-2xl p-4 sm:p-5 border border-green-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-lg sm:text-2xl font-bold text-green-900 truncate">{formatCurrency(userStats.totalSpent)}</p>
-                  <p className="text-green-600 text-xs sm:text-sm font-medium">Total Spent</p>
+                  <p className="text-xl sm:text-3xl font-extrabold text-green-900 truncate mb-1">{formatCurrency(userStats.totalSpent)}</p>
+                  <p className="text-green-700 text-xs sm:text-sm font-semibold">Total Spent</p>
                 </div>
 
-                <div className="bg-purple-50 rounded-xl p-3 sm:p-4 border border-purple-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 rounded-2xl p-4 sm:p-5 border border-purple-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-lg sm:text-2xl font-bold text-purple-900 truncate">{formatCurrency(userStats.walletBalance)}</p>
-                  <p className="text-purple-600 text-xs sm:text-sm font-medium">Wallet Balance</p>
+                  <p className="text-xl sm:text-3xl font-extrabold text-purple-900 truncate mb-1">{formatCurrency(userStats.walletBalance)}</p>
+                  <p className="text-purple-700 text-xs sm:text-sm font-semibold">Wallet Balance</p>
                 </div>
 
-                <div className="bg-orange-50 rounded-xl p-3 sm:p-4 border border-orange-100">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="w-7 h-7 sm:w-8 sm:h-8 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                <div className="bg-gradient-to-br from-orange-50 to-amber-100/50 rounded-2xl p-4 sm:p-5 border border-orange-200/50 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 group backdrop-blur-sm">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                      <svg className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
                       </svg>
                     </div>
                   </div>
-                  <p className="text-xl sm:text-2xl font-bold text-orange-900">{userStats.referrals}</p>
-                  <p className="text-orange-600 text-xs sm:text-sm font-medium">Referrals</p>
+                  <p className="text-2xl sm:text-3xl font-extrabold text-orange-900 mb-1">{userStats.referrals}</p>
+                  <p className="text-orange-700 text-xs sm:text-sm font-semibold">Referrals</p>
                 </div>
               </div>
 
@@ -830,10 +853,10 @@ const UserProfile = () => {
           )}
         </div>
 
-        {/* Edit Profile Modal */}
+        {/* Edit Profile Modal - Enhanced */}
         {isEditing && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fadeIn">
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-200/50 transform animate-fadeInUp">
               <div className="p-4 sm:p-6">
                 <div className="flex items-center justify-between mb-4 sm:mb-6">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Edit Profile</h2>
@@ -896,14 +919,25 @@ const UserProfile = () => {
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                       <input
                         type="text"
-                        name="name"
-                        value={editData.name || ''}
+                        name="firstName"
+                        value={editData.firstName || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Enter your name"
+                        placeholder="Enter your first name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                      <input
+                        type="text"
+                        name="lastName"
+                        value={editData.lastName || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter your last name (optional)"
                       />
                     </div>
                     <div>
@@ -1047,10 +1081,10 @@ const UserProfile = () => {
           </div>
         )}
 
-        {/* Share Modal */}
+        {/* Share Modal - Enhanced */}
         {showShareModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-3 sm:p-4">
-            <div className="bg-white rounded-lg max-w-md w-full p-4 sm:p-6">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-3 sm:p-4 animate-fadeIn">
+            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-gray-200/50 transform animate-fadeInUp">
               <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900">Share Your Referral</h3>
                 <button

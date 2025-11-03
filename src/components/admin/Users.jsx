@@ -1,13 +1,21 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import userService from '../../services/userService';
 
 const Users = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  
+  // Wallet management state
+  const [showAddMoneyModal, setShowAddMoneyModal] = useState(false);
+  const [walletAmount, setWalletAmount] = useState('');
+  const [walletDescription, setWalletDescription] = useState('');
+  const [walletLoading, setWalletLoading] = useState(false);
   const [userStats, setUserStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -94,13 +102,57 @@ const Users = () => {
   });
 
   const openUserModal = (user) => {
-    setSelectedUser(user);
-    setShowUserModal(true);
+    // Navigate to detailed user page
+    navigate(`/admin/users/${user._id}`);
   };
 
   const closeUserModal = () => {
     setSelectedUser(null);
     setShowUserModal(false);
+    setShowAddMoneyModal(false);
+    setWalletAmount('');
+    setWalletDescription('');
+  };
+
+  const handleAddMoneyToWallet = async () => {
+    if (!walletAmount || parseFloat(walletAmount) <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    setWalletLoading(true);
+    try {
+      await userService.addWalletMoney({
+        userId: selectedUser._id,
+        amount: parseFloat(walletAmount),
+        description: walletDescription || `Manual credit by admin`
+      });
+      
+      alert(`₹${walletAmount} added to ${selectedUser.name}'s wallet successfully!`);
+      
+      // Refresh users list to get updated wallet balance
+      fetchUsers();
+      
+      // Update selected user's wallet balance
+      const updatedBalance = (selectedUser.stats?.walletBalance || 0) + parseFloat(walletAmount);
+      setSelectedUser({
+        ...selectedUser,
+        stats: {
+          ...selectedUser.stats,
+          walletBalance: updatedBalance
+        }
+      });
+      
+      // Close modal
+      setShowAddMoneyModal(false);
+      setWalletAmount('');
+      setWalletDescription('');
+    } catch (error) {
+      console.error('Error adding wallet money:', error);
+      alert(error.message || 'Failed to add money to wallet');
+    } finally {
+      setWalletLoading(false);
+    }
   };
 
   if (loading) {
@@ -254,13 +306,18 @@ const Users = () => {
                         ) : (
                           <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
                             <span className="text-white text-sm font-medium">
-                              {user.name?.charAt(0) || 'U'}
+                              {(user.firstName || user.name)?.charAt(0) || 'U'}
                             </span>
                           </div>
                         )}
                       </div>
                       <div className="ml-4">
-                        <div className="text-sm font-medium text-gray-900">{user.name}</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.firstName 
+                            ? `${user.firstName} ${user.lastName || ''}`.trim()
+                            : user.name
+                          }
+                        </div>
                         <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </div>
@@ -341,11 +398,16 @@ const Users = () => {
                       ) : (
                         <div className="h-24 w-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center mx-auto mb-4">
                           <span className="text-white text-2xl font-bold">
-                            {selectedUser.name?.charAt(0) || 'U'}
+                            {(selectedUser.firstName || selectedUser.name)?.charAt(0) || 'U'}
                           </span>
                         </div>
                       )}
-                      <h3 className="text-xl font-bold text-gray-900">{selectedUser.name}</h3>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {selectedUser.firstName 
+                          ? `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim()
+                          : selectedUser.name
+                        }
+                      </h3>
                       <p className="text-gray-600">{selectedUser.email}</p>
                       <p className="text-gray-500 text-sm">{selectedUser.phone}</p>
                     </div>
@@ -579,7 +641,123 @@ const Users = () => {
                         </div>
                       </div>
                     </div>
+
+                    {/* Wallet Management */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium text-gray-900">Wallet Management</h4>
+                        <button
+                          onClick={() => setShowAddMoneyModal(true)}
+                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span>Add Money</span>
+                        </button>
+                      </div>
+                      <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                        <div className="text-3xl font-bold text-green-900 mb-1">
+                          {formatCurrency(selectedUser.stats?.walletBalance || 0)}
+                        </div>
+                        <div className="text-green-700 text-sm">Available Balance</div>
+                      </div>
+                    </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Money to Wallet Modal */}
+      {showAddMoneyModal && selectedUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">Add Money to Wallet</h2>
+                <button
+                  onClick={() => setShowAddMoneyModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    User
+                  </label>
+                  <div className="bg-gray-50 rounded-lg p-3">
+                    <p className="font-medium text-gray-900">
+                      {selectedUser.firstName 
+                        ? `${selectedUser.firstName} ${selectedUser.lastName || ''}`.trim()
+                        : selectedUser.name
+                      }
+                    </p>
+                    <p className="text-sm text-gray-600">{selectedUser.email}</p>
+                    <p className="text-sm text-gray-500">Current Balance: {formatCurrency(selectedUser.stats?.walletBalance || 0)}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Amount to Add (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="0.01"
+                    value={walletAmount}
+                    onChange={(e) => setWalletAmount(e.target.value)}
+                    placeholder="Enter amount"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={walletDescription}
+                    onChange={(e) => setWalletDescription(e.target.value)}
+                    placeholder="Reason for adding money"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
+
+                {walletAmount && (
+                  <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">New Balance:</span>
+                      <span className="font-bold text-green-900">
+                        {formatCurrency((selectedUser.stats?.walletBalance || 0) + parseFloat(walletAmount || 0))}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowAddMoneyModal(false)}
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAddMoneyToWallet}
+                    disabled={!walletAmount || parseFloat(walletAmount) <= 0 || walletLoading}
+                    className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {walletLoading ? 'Adding...' : 'Add Money'}
+                  </button>
                 </div>
               </div>
             </div>

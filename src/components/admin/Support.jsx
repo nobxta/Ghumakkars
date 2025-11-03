@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, 
@@ -16,7 +16,13 @@ import {
   MoreVertical,
   Send,
   Tag,
-  UserCheck
+  UserCheck,
+  ChevronDown,
+  MoreHorizontal,
+  Check,
+  CheckCheck,
+  Archive,
+  FileText
 } from 'lucide-react';
 import contactService from '../../services/contactService';
 
@@ -27,16 +33,22 @@ const Support = () => {
   const [stats, setStats] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [priorityFilter, setPriorityFilter] = useState('');
   const [replyMessage, setReplyMessage] = useState('');
   const [replying, setReplying] = useState(false);
-  const [showReplyModal, setShowReplyModal] = useState(false);
+  const messagesEndRef = useRef(null);
 
   // Load contacts and stats
   useEffect(() => {
     loadContacts();
     loadStats();
-  }, [searchTerm, statusFilter, priorityFilter]);
+  }, [searchTerm, statusFilter]);
+
+  // Auto scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (selectedContact && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [selectedContact, selectedContact?.adminReplies]);
 
   const loadContacts = async () => {
     try {
@@ -44,10 +56,15 @@ const Support = () => {
       const params = {};
       if (searchTerm) params.search = searchTerm;
       if (statusFilter) params.status = statusFilter;
-      if (priorityFilter) params.priority = priorityFilter;
       
       const response = await contactService.getAllContacts(params);
       setContacts(response.data.contacts);
+      
+      // Update selected contact if it exists in the new list
+      if (selectedContact) {
+        const updated = response.data.contacts.find(c => c._id === selectedContact._id);
+        if (updated) setSelectedContact(updated);
+      }
     } catch (error) {
       console.error('Failed to load contacts:', error);
     } finally {
@@ -67,17 +84,41 @@ const Support = () => {
   const handleReply = async () => {
     if (!replyMessage.trim() || !selectedContact) return;
     
+    // Check minimum length requirement
+    if (replyMessage.trim().length < 5) {
+      alert('Reply must be at least 5 characters long.');
+      return;
+    }
+    
     try {
       setReplying(true);
       await contactService.replyToContact(selectedContact._id, replyMessage);
       setReplyMessage('');
-      setShowReplyModal(false);
-      loadContacts();
-      loadStats();
+      
+      // Reload contacts to get updated data
+      await loadContacts();
+      
+      // Reload stats
+      await loadStats();
+      
+      // Show success message
       alert('Reply sent successfully!');
     } catch (error) {
       console.error('Failed to send reply:', error);
-      alert('Failed to send reply. Please try again.');
+      
+      // Show more specific error message
+      if (error.message.includes('Validation failed')) {
+        alert('Reply must be at least 5 characters long.');
+      } else if (error.message.includes('Admin role required')) {
+        alert('Access denied. Admin role required.');
+        window.location.href = '/admin/login';
+      } else if (error.message.includes('Access denied') || error.message.includes('token')) {
+        alert('Authentication error. Please log in again.');
+        // Redirect to login
+        window.location.href = '/admin/login';
+      } else {
+        alert(`Failed to send reply: ${error.message}`);
+      }
     } finally {
       setReplying(false);
     }
@@ -86,8 +127,8 @@ const Support = () => {
   const updateStatus = async (contactId, status) => {
     try {
       await contactService.updateContactStatus(contactId, status);
-      loadContacts();
-      loadStats();
+      await loadContacts();
+      await loadStats();
     } catch (error) {
       console.error('Failed to update status:', error);
     }
@@ -95,21 +136,11 @@ const Support = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800';
-      case 'in_progress': return 'bg-yellow-100 text-yellow-800';
-      case 'resolved': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'new': return 'bg-blue-500 text-white';
+      case 'in_progress': return 'bg-yellow-500 text-white';
+      case 'resolved': return 'bg-green-500 text-white';
+      case 'closed': return 'bg-gray-500 text-white';
+      default: return 'bg-gray-500 text-white';
     }
   };
 
@@ -123,57 +154,31 @@ const Support = () => {
     });
   };
 
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Support Center</h1>
-          <p className="text-gray-600">Manage customer queries and provide support</p>
-        </motion.div>
-
-        {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-        >
-          {stats.statusStats?.map((stat) => (
-            <div key={stat._id} className="bg-white rounded-xl p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 capitalize">{stat._id}</p>
-                  <p className="text-2xl font-bold text-gray-900">{stat.count}</p>
-                </div>
-                <div className={`p-3 rounded-full ${getStatusColor(stat._id)}`}>
-                  {stat._id === 'new' && <MessageSquare className="w-6 h-6" />}
-                  {stat._id === 'in_progress' && <Clock className="w-6 h-6" />}
-                  {stat._id === 'resolved' && <CheckCircle className="w-6 h-6" />}
-                  {stat._id === 'closed' && <AlertCircle className="w-6 h-6" />}
-                </div>
-              </div>
-            </div>
-          ))}
-        </motion.div>
-
-        {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-xl p-6 shadow-lg mb-6"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="h-[calc(100vh-120px)] flex flex-col">
+      <div className="flex-1 flex gap-4">
+        {/* Left Sidebar - Contact List */}
+        <div className="w-1/3 bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+          {/* Sidebar Header */}
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-indigo-600">
+            <h2 className="text-xl font-bold text-white">Support Chat</h2>
+            <p className="text-sm text-purple-100">{contacts.length} conversations</p>
+          </div>
+          
+          {/* Search and Filters */}
+          <div className="p-4 border-b border-gray-200 space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
-                placeholder="Search contacts..."
+                placeholder="Search conversations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -183,7 +188,7 @@ const Support = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
             >
               <option value="">All Status</option>
               <option value="new">New</option>
@@ -191,315 +196,214 @@ const Support = () => {
               <option value="resolved">Resolved</option>
               <option value="closed">Closed</option>
             </select>
-            
-            <select
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            >
-              <option value="">All Priority</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-            
-            <button
-              onClick={loadContacts}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-            >
-              <Filter className="w-5 h-5 inline mr-2" />
-              Apply Filters
-            </button>
           </div>
-        </motion.div>
-
-        {/* Contacts List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-xl shadow-lg overflow-hidden"
-        >
-          {loading ? (
-            <div className="p-8 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading contacts...</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Message</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priority</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {contacts.map((contact) => (
-                    <motion.tr
-                      key={contact._id}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="hover:bg-gray-50 cursor-pointer"
-                      onClick={() => setSelectedContact(contact)}
-                    >
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10">
-                            <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
-                              <User className="h-5 w-5 text-purple-600" />
-                            </div>
-                          </div>
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{contact.name}</div>
-                            <div className="text-sm text-gray-500">{contact.email}</div>
-                          </div>
+          
+          {/* Contact List */}
+          <div className="flex-1 overflow-y-auto">
+            {loading ? (
+              <div className="p-8 text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="mt-4 text-gray-600">Loading conversations...</p>
+              </div>
+            ) : contacts.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                <MessageSquare className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                <p>No conversations found</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-100">
+                {contacts.map((contact) => (
+                  <motion.div
+                    key={contact._id}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    whileHover={{ backgroundColor: '#f9fafb' }}
+                    className={`p-4 cursor-pointer transition-all ${
+                      selectedContact?._id === contact._id ? 'bg-purple-50 border-l-4 border-purple-500' : ''
+                    }`}
+                    onClick={() => setSelectedContact(contact)}
+                  >
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0 ${getStatusColor(contact.status)}`}>
+                        {contact.name.charAt(0)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-gray-900 truncate">{contact.name}</h3>
+                          <span className="text-xs text-gray-500">{formatDate(contact.createdAt)}</span>
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 max-w-xs">
-                          <div className="font-medium text-purple-600">{contact.subject}</div>
-                          <div className="text-gray-600 truncate">{contact.message}</div>
+                        <p className="text-sm text-gray-600 truncate">{contact.message}</p>
+                        <div className="flex items-center space-x-2 mt-2">
+                          <span className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(contact.status)}`}>
+                            {contact.status.replace('_', ' ')}
+                          </span>
+                          {contact.adminReplies?.length > 0 && (
+                            <span className="text-xs text-purple-600 font-medium">
+                              {contact.adminReplies.length} replies
+                            </span>
+                          )}
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(contact.status)}`}>
-                          {contact.status}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getPriorityColor(contact.priority)}`}>
-                          {contact.priority}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(contact.createdAt)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedContact(contact);
-                              setShowReplyModal(true);
-                            }}
-                            className="text-purple-600 hover:text-purple-900"
-                          >
-                            <Reply className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedContact(contact);
-                            }}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
 
-        {/* Reply Modal */}
-        <AnimatePresence>
-          {showReplyModal && selectedContact && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-xl p-6 w-full max-w-2xl max-h-[80vh] overflow-y-auto"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Reply to {selectedContact.name}</h3>
-                  <button
-                    onClick={() => setShowReplyModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-sm text-gray-600 mb-2">Original Message:</p>
-                  <p className="text-gray-900">{selectedContact.message}</p>
-                </div>
-                
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Your Reply
-                  </label>
-                  <textarea
-                    value={replyMessage}
-                    onChange={(e) => setReplyMessage(e.target.value)}
-                    rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="Type your reply here..."
-                  />
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={() => setShowReplyModal(false)}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleReply}
-                    disabled={!replyMessage.trim() || replying}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-                  >
-                    {replying ? (
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    ) : (
-                      <Send className="w-4 h-4 mr-2" />
-                    )}
-                    Send Reply
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Contact Details Modal */}
-        <AnimatePresence>
-          {selectedContact && !showReplyModal && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="bg-white rounded-xl p-6 w-full max-w-4xl max-h-[80vh] overflow-y-auto"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900">Contact Details</h3>
-                  <button
-                    onClick={() => setSelectedContact(null)}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <MoreVertical className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center">
-                        <User className="w-5 h-5 text-gray-400 mr-3" />
-                        <span className="text-gray-900">{selectedContact.name}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Mail className="w-5 h-5 text-gray-400 mr-3" />
-                        <span className="text-gray-900">{selectedContact.email}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Phone className="w-5 h-5 text-gray-400 mr-3" />
-                        <span className="text-gray-900">{selectedContact.phone}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Calendar className="w-5 h-5 text-gray-400 mr-3" />
-                        <span className="text-gray-900">{formatDate(selectedContact.createdAt)}</span>
-                      </div>
-                      <div className="flex items-center">
-                        <Tag className="w-5 h-5 text-gray-400 mr-3" />
-                        <span className="text-gray-900 font-medium">{selectedContact.subject}</span>
-                      </div>
+        {/* Right Side - Chat Area */}
+        <div className="flex-1 bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+          {selectedContact ? (
+            <>
+              {/* Chat Header */}
+              <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-purple-500 to-indigo-600">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${getStatusColor(selectedContact.status)}`}>
+                      {selectedContact.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white">{selectedContact.name}</h3>
+                      <p className="text-sm text-purple-100">{selectedContact.email}</p>
                     </div>
                   </div>
                   
-                  <div>
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">Status & Priority</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Status:</span>
-                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getStatusColor(selectedContact.status)}`}>
-                          {selectedContact.status}
-                        </span>
+                  {/* Status Selector */}
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={selectedContact.status}
+                      onChange={(e) => updateStatus(selectedContact._id, e.target.value)}
+                      className="px-3 py-1.5 bg-white/20 text-white rounded-lg border border-white/30 focus:ring-2 focus:ring-white focus:border-transparent text-sm"
+                    >
+                      <option value="new">New</option>
+                      <option value="in_progress">In Progress</option>
+                      <option value="resolved">Resolved</option>
+                      <option value="closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+                
+                {/* Contact Info */}
+                <div className="mt-3 flex items-center space-x-4 text-sm text-purple-100">
+                  <div className="flex items-center space-x-1">
+                    <Mail className="w-4 h-4" />
+                    <span>{selectedContact.email}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Phone className="w-4 h-4" />
+                    <span>{selectedContact.phone}</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Calendar className="w-4 h-4" />
+                    <span>{selectedContact.subject}</span>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Messages Area */}
+              <div className="flex-1 overflow-y-auto bg-gray-50 p-6">
+                {/* Original User Message */}
+                <div className="mb-6">
+                  <div className="flex items-start space-x-3 mb-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold ${getStatusColor(selectedContact.status)}`}>
+                      {selectedContact.name.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-semibold text-gray-900">{selectedContact.name}</span>
+                        <span className="text-xs text-gray-500">{formatTime(selectedContact.createdAt)}</span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-600">Priority:</span>
-                        <span className={`px-3 py-1 text-sm font-semibold rounded-full ${getPriorityColor(selectedContact.priority)}`}>
-                          {selectedContact.priority}
-                        </span>
+                      <div className="bg-white rounded-2xl rounded-tl-sm shadow-sm p-4 max-w-3xl">
+                        <p className="text-gray-900 whitespace-pre-wrap">{selectedContact.message}</p>
                       </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="mt-6">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4">Message</h4>
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <p className="text-gray-900 whitespace-pre-wrap">{selectedContact.message}</p>
-                  </div>
-                </div>
-                
-                {selectedContact.adminReplies && selectedContact.adminReplies.length > 0 && (
-                  <div className="mt-6">
-                    <h4 className="text-lg font-medium text-gray-900 mb-4">Admin Replies</h4>
-                    <div className="space-y-4">
-                      {selectedContact.adminReplies.map((reply, index) => (
-                        <div key={index} className="bg-blue-50 p-4 rounded-lg">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-blue-900">
-                              {reply.repliedBy?.name || 'Admin'}
-                            </span>
-                            <span className="text-sm text-blue-600">
-                              {formatDate(reply.repliedAt)}
-                            </span>
-                          </div>
-                          <p className="text-blue-800">{reply.message}</p>
+                {/* Admin Replies */}
+                {selectedContact.adminReplies?.map((reply, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-6 flex justify-end"
+                  >
+                    <div className="flex items-start space-x-2 max-w-3xl">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-1 justify-end">
+                          <span className="text-xs text-gray-500">Support Team</span>
+                          <CheckCheck className="w-4 h-4 text-blue-500" />
+                          <span className="text-xs text-gray-500">{formatTime(reply.repliedAt)}</span>
                         </div>
-                      ))}
+                        <div className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-2xl rounded-tr-sm shadow-md p-4">
+                          <p className="whitespace-pre-wrap">{reply.message}</p>
+                        </div>
+                        <div className="flex items-center space-x-1 mt-1 justify-end">
+                          <span className="text-xs text-gray-400">via Email</span>
+                        </div>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">S</span>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  </motion.div>
+                ))}
                 
-                <div className="mt-6 flex justify-end space-x-3">
+                <div ref={messagesEndRef} />
+              </div>
+              
+              {/* Input Area */}
+              <div className="p-4 border-t border-gray-200 bg-white">
+                <div className="flex items-end space-x-3">
+                  <div className="flex-1">
+                    <textarea
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleReply();
+                        }
+                      }}
+                      placeholder="Type a message..."
+                      rows={3}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                    />
+                  </div>
                   <button
-                    onClick={() => setSelectedContact(null)}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    onClick={handleReply}
+                    disabled={!replyMessage.trim() || replying}
+                    className="px-6 py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center space-x-2 shadow-lg"
                   >
-                    Close
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowReplyModal(true);
-                      setSelectedContact(selectedContact);
-                    }}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center"
-                  >
-                    <Reply className="w-4 h-4 mr-2" />
-                    Reply
+                    {replying ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Sending...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        <span>Send</span>
+                      </>
+                    )}
                   </button>
                 </div>
-              </motion.div>
-            </motion.div>
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  ⚡ Replies are sent via email to the user
+                </p>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100">
+              <div className="text-center">
+                <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-600">Select a conversation</h3>
+                <p className="text-sm text-gray-500">Choose a contact from the list to start chatting</p>
+              </div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );

@@ -142,9 +142,9 @@ const EnhancedAdminLayout = ({ children }) => {
       activeColor: 'bg-red-100'
     },
     { 
-      name: 'Sessions', 
+      name: 'Analytics', 
       icon: Shield, 
-      path: '/admin/sessions', 
+      path: '/admin/analytics', 
       color: 'text-cyan-600',
       bgColor: 'bg-cyan-50',
       hoverColor: 'hover:bg-cyan-50',

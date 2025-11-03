@@ -10,20 +10,33 @@ import ForgotPassword from './ForgotPassword';
 const Auth = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, loadUser, loading } = useAuth();
   const [currentView, setCurrentView] = useState('login');
   const [email, setEmail] = useState('');
+  const [hasCheckedAuth, setHasCheckedAuth] = useState(false);
 
   // Get redirect URL and referral code from query parameters
   const redirectUrl = searchParams.get('redirect') || '/';
   const referralCode = searchParams.get('ref') || '';
 
-  // Redirect if user is already authenticated
+  // Manual authentication check - only when user clicks a button
+  const handleCheckExistingAuth = async () => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      const result = await loadUser();
+      if (result.success) {
+        navigate(redirectUrl);
+      }
+    }
+    setHasCheckedAuth(true);
+  };
+
+  // Redirect if user is already authenticated (only after manual check)
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (isAuthenticated && user && hasCheckedAuth) {
       navigate(redirectUrl);
     }
-  }, [isAuthenticated, user, navigate, redirectUrl]);
+  }, [isAuthenticated, user, navigate, redirectUrl, hasCheckedAuth]);
 
   const handleSwitchToRegister = () => {
     setCurrentView('register');
@@ -114,6 +127,19 @@ const Auth = () => {
 
   return (
     <div>
+      {/* Check Existing Authentication Button */}
+      {!hasCheckedAuth && localStorage.getItem('token') && (
+        <div className="fixed top-4 right-4 z-50">
+          <button
+            onClick={handleCheckExistingAuth}
+            disabled={loading}
+            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Checking...' : 'Already have an account? Sign In'}
+          </button>
+        </div>
+      )}
+      
       {renderCurrentView()}
     </div>
   );

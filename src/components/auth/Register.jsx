@@ -6,7 +6,8 @@ const Register = ({ onSwitchToLogin, onSwitchToOTP, referralCode = '' }) => {
   const { register, loading, error, clearError } = useAuth();
   
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     password: '',
@@ -69,10 +70,10 @@ const Register = ({ onSwitchToLogin, onSwitchToOTP, referralCode = '' }) => {
   const validateForm = () => {
     const errors = {};
 
-    if (!formData.name.trim()) {
-      errors.name = 'Name is required';
-    } else if (formData.name.trim().length < 2) {
-      errors.name = 'Name must be at least 2 characters';
+    if (!formData.firstName.trim()) {
+      errors.firstName = 'First name is required';
+    } else if (formData.firstName.trim().length < 2) {
+      errors.firstName = 'First name must be at least 2 characters';
     }
 
     if (!formData.email.trim()) {
@@ -204,27 +205,44 @@ const Register = ({ onSwitchToLogin, onSwitchToOTP, referralCode = '' }) => {
               <p className="text-xs text-gray-500 mt-1.5 text-center" style={{ fontFamily: "'Inter', sans-serif" }}>JPG, PNG or GIF (Max 5MB)</p>
             </div>
 
-            {/* Name Input */}
+            {/* First Name Input */}
             <div>
-              <label htmlFor="name" className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
-                Full Name
+              <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+                First Name <span className="text-red-500">*</span>
               </label>
               <input
-                id="name"
-                name="name"
+                id="firstName"
+                name="firstName"
                 type="text"
                 required
-                value={formData.name}
+                value={formData.firstName}
                 onChange={handleChange}
                 className={`w-full px-4 py-3 bg-white/50 border backdrop-blur-sm rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 ${
-                  validationErrors.name ? 'border-red-400' : 'border-purple-200'
+                  validationErrors.firstName ? 'border-red-400' : 'border-purple-200'
                 }`}
-                placeholder="Enter your full name"
+                placeholder="Enter your first name"
                 style={{ fontFamily: "'Inter', sans-serif" }}
               />
-              {validationErrors.name && (
-                <p className="mt-2 text-sm text-red-300">{validationErrors.name}</p>
+              {validationErrors.firstName && (
+                <p className="mt-2 text-sm text-red-300">{validationErrors.firstName}</p>
               )}
+            </div>
+
+            {/* Last Name Input */}
+            <div>
+              <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+                Last Name <span className="text-gray-500 text-xs">(Optional)</span>
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                value={formData.lastName}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-white/50 border border-purple-200 backdrop-blur-sm rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+                placeholder="Enter your last name (optional)"
+                style={{ fontFamily: "'Inter', sans-serif" }}
+              />
             </div>
 
             {/* Email Input */}

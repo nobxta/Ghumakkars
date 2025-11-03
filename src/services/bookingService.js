@@ -38,6 +38,26 @@ api.interceptors.response.use(
 );
 
 const bookingService = {
+  // Create a pre-booking (for Razorpay flow)
+  prebook: async (bookingData) => {
+    try {
+      console.log('Sending pre-book data:', bookingData);
+      const response = await api.post('/api/booking/prebook', bookingData);
+      return response.data;
+    } catch (error) {
+      console.error('Pre-book API error:', error.response?.data);
+      const errorMessage = error.response?.data?.message || 'Failed to create pre-booking';
+      const validationErrors = error.response?.data?.errors;
+      
+      if (validationErrors && validationErrors.length > 0) {
+        const errorDetails = validationErrors.map(err => `${err.param}: ${err.msg}`).join(', ');
+        throw new Error(`${errorMessage}. Details: ${errorDetails}`);
+      }
+      
+      throw new Error(errorMessage);
+    }
+  },
+
   // Create a new booking
   createBooking: async (bookingData) => {
     try {
@@ -68,13 +88,23 @@ const bookingService = {
     }
   },
 
-  // Get booking details
+  // Get booking by ID
   getBookingById: async (bookingId) => {
     try {
       const response = await api.get(`/api/booking/${bookingId}`);
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch booking details');
+    }
+  },
+
+  // Update booking payment
+  updateBookingPayment: async (bookingId, paymentData) => {
+    try {
+      const response = await api.put(`/api/booking/${bookingId}/payment`, paymentData);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update payment');
     }
   },
 
@@ -138,18 +168,35 @@ const bookingService = {
     }
   },
 
-  // Admin: Send payment reminder
-  sendReminder: async (bookingId, reminderType) => {
+  // Admin: Update booking status
+  updateBookingStatus: async (bookingId, status, reason) => {
     try {
-      const response = await api.post('/api/booking/admin/send-reminder', {
-        bookingId,
-        reminderType
-      });
+      const response = await api.put(`/api/booking/admin/${bookingId}/status`, { status, reason });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to update booking status');
+    }
+  },
+
+  // Admin: Mark booking as paid
+  markAsPaid: async (bookingId) => {
+    try {
+      const response = await api.put(`/api/booking/admin/${bookingId}/mark-paid`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to mark booking as paid');
+    }
+  },
+
+  // Admin: Send reminder
+  sendReminder: async (bookingId, reminderType = 'payment') => {
+    try {
+      const response = await api.post(`/api/booking/admin/${bookingId}/reminder`, { type: reminderType });
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to send reminder');
     }
-  }
+  },
 };
 
 export default bookingService;

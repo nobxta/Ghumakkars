@@ -75,6 +75,40 @@ const BookingSuccess = ({ booking, trip, onClose }) => {
     return `₹${amount.toLocaleString('en-IN')}`;
   };
 
+  const getBookingStatusMessage = () => {
+    const paymentType = booking.payment?.paymentType || 'full';
+    const paymentStatus = booking.payment?.paymentStatus || booking.status;
+    const status = booking.status;
+
+    // Status-based messages
+    if (status === 'confirmed' || paymentStatus === 'verified') {
+      return {
+        title: '🎉 Booking Confirmed! 🎉',
+        description: 'Your seat is secured! We\'ve sent the confirmation to your email.'
+      };
+    } else if (status === 'pending' && paymentType === 'seat_lock') {
+      return {
+        title: '🔒 Seat Locked! 🔒',
+        description: 'Your seat is reserved! Complete the remaining payment before the trip to confirm your booking.'
+      };
+    } else if (status === 'pending') {
+      return {
+        title: '📧 Booking Received! 📧',
+        description: 'Your booking has been received and is awaiting admin confirmation. You\'ll receive an email once approved.'
+      };
+    } else if (status === 'seat_locked') {
+      return {
+        title: '🔒 Seat Locked! 🔒',
+        description: 'Your seat is reserved! Pay the remaining amount to complete your booking.'
+      };
+    } else {
+      return {
+        title: '✅ Booking Successful! ✅',
+        description: 'Your booking has been processed. Check your email for details.'
+      };
+    }
+  };
+
   const handleDownloadReceipt = () => {
     // TODO: Implement PDF receipt download
     alert('Receipt download will be implemented soon!');
@@ -137,7 +171,7 @@ const BookingSuccess = ({ booking, trip, onClose }) => {
             transition={{ delay: 0.3 }}
             className="text-4xl font-black text-white mb-2 relative z-10"
           >
-            🎉 Booking Confirmed! 🎉
+            {getBookingStatusMessage().title}
           </motion.h1>
 
           <motion.p
@@ -146,7 +180,7 @@ const BookingSuccess = ({ booking, trip, onClose }) => {
             transition={{ delay: 0.4 }}
             className="text-emerald-50 text-lg relative z-10"
           >
-            Your adventure awaits! We've sent the confirmation to your email.
+            {getBookingStatusMessage().description}
           </motion.p>
 
           {/* Booking ID Badge */}

@@ -75,8 +75,8 @@ const Privacy = () => {
               <h2 className="text-xl font-semibold text-slate-800 mb-2">9. Contact Us</h2>
               <p className="text-slate-700">If you have questions or requests related to privacy and data protection, contact us:</p>
               <ul className="list-disc pl-6 text-slate-700 mt-2">
-                <li>WhatsApp: <a href="#" className="text-blue-600 underline">Click Here</a></li>
-                <li>Email: <a href="mailto:yashankgla05@email.com" className="text-blue-600 underline">yashankgla05@email.com</a></li>
+                <li>WhatsApp: <a href="https://wa.me/918384826414" className="text-blue-600 underline" target="_blank" rel="noopener noreferrer">Click Here</a></li>
+                <li>Email: <a href="mailto:contact@ghumakkars.in" className="text-blue-600 underline">contact@ghumakkars.in</a></li>
               </ul>
             </div>
 

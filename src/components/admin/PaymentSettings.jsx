@@ -24,6 +24,7 @@ const PaymentSettings = () => {
   const [qrImagePreview, setQrImagePreview] = useState(null);
   
   const [settings, setSettings] = useState({
+    paymentMode: 'manual_qr', // 'manual_qr' or 'razorpay'
     qrCode: {
       image: '',
       upiId: '',
@@ -34,6 +35,11 @@ const PaymentSettings = () => {
       upiId: '',
       merchantName: '',
       isActive: true
+    },
+    razorpaySettings: {
+      keyId: '',
+      keySecret: '',
+      isActive: false
     },
     paymentMethods: {
       upi: true,
@@ -290,6 +296,177 @@ const PaymentSettings = () => {
       )}
 
       <div className="space-y-6">
+        {/* Payment Mode Toggle */}
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-6 border-2 border-purple-200">
+          <h3 className="text-xl font-bold text-slate-800 mb-4">Payment Mode</h3>
+          <p className="text-sm text-slate-600 mb-6">Choose how customers will make payments for bookings</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Manual QR Code Option */}
+            <button
+              onClick={() => setSettings(prev => ({ ...prev, paymentMode: 'manual_qr' }))}
+              className={`p-6 rounded-xl border-2 transition-all text-left ${
+                settings.paymentMode === 'manual_qr'
+                  ? 'border-purple-500 bg-purple-100'
+                  : 'border-slate-300 hover:border-slate-400 bg-white'
+              }`}
+            >
+              <div className="flex items-center space-x-3 mb-2">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  settings.paymentMode === 'manual_qr' ? 'bg-purple-500 text-white' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  <QrCode className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900">Manual QR Code</h4>
+                  <p className="text-xs text-slate-600">Admin verifies payment</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600">Users scan QR code and enter transaction ID. Admin verifies manually.</p>
+            </button>
+
+            {/* Razorpay Option */}
+            <button
+              onClick={() => setSettings(prev => ({ ...prev, paymentMode: 'razorpay' }))}
+              className={`p-6 rounded-xl border-2 transition-all text-left ${
+                settings.paymentMode === 'razorpay'
+                  ? 'border-blue-500 bg-blue-100'
+                  : 'border-slate-300 hover:border-slate-400 bg-white'
+              }`}
+            >
+              <div className="flex items-center space-x-3 mb-2">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  settings.paymentMode === 'razorpay' ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-600'
+                }`}>
+                  <Smartphone className="w-6 h-6" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900">Razorpay Gateway</h4>
+                  <p className="text-xs text-slate-600">Auto-confirm booking</p>
+                </div>
+              </div>
+              <p className="text-sm text-slate-600">Instant payment & automatic confirmation. No admin verification needed.</p>
+            </button>
+          </div>
+
+          {/* Razorpay Configuration */}
+          {settings.paymentMode === 'razorpay' && (
+            <div className="mt-6 bg-white rounded-xl p-6 border border-blue-200">
+              <h4 className="font-bold text-slate-900 mb-4">Razorpay Configuration</h4>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Razorpay Key ID <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.razorpaySettings?.keyId || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      razorpaySettings: { ...prev.razorpaySettings, keyId: e.target.value }
+                    }))}
+                    placeholder="rzp_test_xxxxx or rzp_live_xxxxx"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Razorpay Key Secret <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="password"
+                    value={settings.razorpaySettings?.keySecret || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      razorpaySettings: { ...prev.razorpaySettings, keySecret: e.target.value }
+                    }))}
+                    placeholder="Enter your Razorpay key secret"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                  <p className="text-xs text-blue-800 font-medium mb-2">📍 Get your Razorpay credentials:</p>
+                  <a 
+                    href="https://dashboard.razorpay.com/app/keys" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-700 hover:text-blue-900 underline text-xs"
+                  >
+                    Go to Razorpay Dashboard →
+                  </a>
+                  <p className="text-xs text-blue-800 mt-2">
+                    Use test keys for development, live keys for production
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Save Payment Mode Button */}
+          <div className="mt-6">
+            <button
+              onClick={async () => {
+                try {
+                  setSaving(true);
+                  const token = localStorage.getItem('token');
+                  
+                  // Get existing settings first
+                  const currentSettings = await axios.get(`${API_URL}/api/payment-settings`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                  });
+                  
+                  const existingSettings = currentSettings.data.data || {};
+                  
+                  const payload = {
+                    qrCode: settings.qrCode,
+                    upiSettings: settings.upiSettings,
+                    paymentMode: settings.paymentMode,
+                    razorpaySettings: settings.razorpaySettings,
+                    bankDetails: existingSettings.bankDetails || {},
+                    paymentMethods: existingSettings.paymentMethods || {},
+                    seatLockSettings: existingSettings.seatLockSettings || {}
+                  };
+                  
+                  const response = await axios.post(
+                    `${API_URL}/api/payment-settings`,
+                    payload,
+                    {
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    }
+                  );
+                  
+                  if (response.data.success) {
+                    setSuccess('Payment settings updated successfully!');
+                    setSettings(response.data.data);
+                    setTimeout(() => setSuccess(''), 3000);
+                  }
+                } catch (error) {
+                  console.error('Save error:', error);
+                  setError(error.response?.data?.message || 'Failed to update payment settings');
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+              className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed font-bold flex items-center justify-center"
+            >
+              {saving ? (
+                <>
+                  <RefreshCw className="w-5 h-5 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save className="w-5 h-5 mr-2" />
+                  Save Payment Mode
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
         {/* QR Code Settings */}
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
           <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">

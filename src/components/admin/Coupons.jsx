@@ -105,13 +105,30 @@ const Coupons = () => {
   const handleCreateCoupon = async (e) => {
     e.preventDefault();
     try {
-      await couponService.createCoupon(couponForm);
+      // Prepare data for submission - convert strings to proper types
+      const couponData = {
+        code: couponForm.code.trim(),
+        type: couponForm.type,
+        value: parseFloat(couponForm.value),
+        usageLimit: parseInt(couponForm.usageLimit),
+        perUserLimit: parseInt(couponForm.perUserLimit) || 1,
+        startDate: couponForm.startDate ? new Date(couponForm.startDate).toISOString() : new Date().toISOString(),
+        endDate: couponForm.endDate ? new Date(couponForm.endDate).toISOString() : new Date().toISOString(),
+        applicableTrips: couponForm.applicableTrips || [],
+        applicableToAllTrips: couponForm.applicableToAllTrips || false,
+        description: couponForm.description || undefined,
+        notes: couponForm.notes || undefined,
+        campaign: (couponForm.campaign?.name || couponForm.campaign?.description) ? couponForm.campaign : undefined
+      };
+
+      await couponService.createCoupon(couponData);
       alert('Coupon created successfully!');
       setShowCreateModal(false);
       resetCouponForm();
       fetchCoupons();
     } catch (error) {
-      alert('Failed to create coupon: ' + error.message);
+      console.error('Create coupon error:', error);
+      alert('Failed to create coupon: ' + (error.message || 'Unknown error'));
     }
   };
 

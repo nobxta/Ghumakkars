@@ -28,38 +28,15 @@ const TripDetailsEnhanced = () => {
     }
   }, [isAuthenticated, refreshUser]);
 
-  // Fetch trip from API
-  useEffect(() => {
-    const fetchTrip = async () => {
-      try {
-        setLoading(true);
-        
-        if (!id || id === 'undefined' || id === 'null') {
-          console.error('Invalid trip ID:', id);
-          setTrip(null);
-          return;
-        }
-        
-        const response = await tripService.getTripById(id);
-        
-        if (response.success) {
-          setTrip(response.data);
-        } else {
-          console.error('Failed to fetch trip:', response.message);
-          setTrip(null);
-        }
-      } catch (error) {
-        console.error('Error fetching trip:', error);
-        setTrip(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchTrip();
-    }
-  }, [id]);
+  const isPastTrip = (departureDate) => {
+    if (!departureDate) return false;
+    const now = new Date();
+    const tripDate = new Date(departureDate);
+    // Reset time to midnight for accurate date comparison
+    now.setHours(0, 0, 0, 0);
+    tripDate.setHours(0, 0, 0, 0);
+    return tripDate < now;
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-IN', {
@@ -76,6 +53,45 @@ const TripDetailsEnhanced = () => {
       year: 'numeric'
     });
   };
+
+  // Fetch trip from API
+  useEffect(() => {
+    const fetchTrip = async () => {
+      try {
+        setLoading(true);
+        
+        if (!id || id === 'undefined' || id === 'null') {
+          console.error('Invalid trip ID:', id);
+          setTrip(null);
+          return;
+        }
+        
+        const response = await tripService.getTripById(id);
+        
+        if (response.success) {
+          const tripData = response.data;
+          // Check if trip is past and redirect to past trip page
+          if (isPastTrip(tripData.departureDate)) {
+            navigate(`/past-trip/${id}`, { replace: true });
+            return;
+          }
+          setTrip(tripData);
+        } else {
+          console.error('Failed to fetch trip:', response.message);
+          setTrip(null);
+        }
+      } catch (error) {
+        console.error('Error fetching trip:', error);
+        setTrip(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchTrip();
+    }
+  }, [id, navigate]);
 
   const handleBooking = () => {
     if (!isAuthenticated) {
@@ -233,7 +249,7 @@ const TripDetailsEnhanced = () => {
             <div className="flex flex-wrap gap-4 sm:gap-6">
               <div className="flex items-center space-x-2 text-white">
                 <Calendar className="w-5 h-5 text-white/80" />
-                <span className="font-semibold">{trip.duration}</span>
+                <span className="font-semibold">{trip.duration || `${trip.nights || 0} Nights ${trip.days || 1} Days`}</span>
               </div>
               <div className="flex items-center space-x-2 text-white">
                 <MapPin className="w-5 h-5 text-white/80" />
@@ -241,7 +257,9 @@ const TripDetailsEnhanced = () => {
               </div>
               <div className="flex items-center space-x-2 text-white">
                 <Users className="w-5 h-5 text-white/80" />
-                <span className="font-semibold">{trip.maxParticipants - trip.currentParticipants} spots left</span>
+                <span className="font-semibold">
+                  {isPastTrip(trip.departureDate) ? 'Past trip' : `${trip.maxParticipants - trip.currentParticipants} spots left`}
+                </span>
               </div>
             </div>
           </div>
@@ -759,32 +777,46 @@ const TripDetailsEnhanced = () => {
                     </span>
                     <span className="font-bold text-slate-800">{formatDate(trip.returnDate)}</span>
                   </div>
-                  <div className={`flex justify-between items-center p-4 rounded-xl border-2 ${
-                    trip.maxParticipants - trip.currentParticipants <= 3
-                      ? 'bg-red-50 border-red-300'
-                      : trip.maxParticipants - trip.currentParticipants <= 10
-                      ? 'bg-yellow-50 border-yellow-300'
-                      : 'bg-green-50 border-green-300'
-                  }`}>
-                    <span className="text-slate-700 font-semibold flex items-center">
-                      <Users className="w-4 h-4 mr-2" />
-                      Spots Left
-                    </span>
-                    <div className="text-right">
-                      <span className={`font-black text-xl ${
-                        trip.maxParticipants - trip.currentParticipants <= 3
-                          ? 'text-red-600'
-                          : trip.maxParticipants - trip.currentParticipants <= 10
-                          ? 'text-yellow-600'
-                          : 'text-green-600'
-                      }`}>
-                        {trip.maxParticipants - trip.currentParticipants}
+                  {isPastTrip(trip.departureDate) ? (
+                    <div className="flex justify-between items-center p-4 rounded-xl border-2 bg-slate-50 border-slate-300">
+                      <span className="text-slate-700 font-semibold flex items-center">
+                        <Users className="w-4 h-4 mr-2" />
+                        Status
                       </span>
-                      {trip.maxParticipants - trip.currentParticipants <= 3 && (
-                        <div className="text-xs text-red-600 font-bold">⚠️ Almost Full!</div>
-                      )}
+                      <div className="text-right">
+                        <span className="font-black text-xl text-slate-600">
+                          Past trip
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className={`flex justify-between items-center p-4 rounded-xl border-2 ${
+                      trip.maxParticipants - trip.currentParticipants <= 3
+                        ? 'bg-red-50 border-red-300'
+                        : trip.maxParticipants - trip.currentParticipants <= 10
+                        ? 'bg-yellow-50 border-yellow-300'
+                        : 'bg-green-50 border-green-300'
+                    }`}>
+                      <span className="text-slate-700 font-semibold flex items-center">
+                        <Users className="w-4 h-4 mr-2" />
+                        Spots Left
+                      </span>
+                      <div className="text-right">
+                        <span className={`font-black text-xl ${
+                          trip.maxParticipants - trip.currentParticipants <= 3
+                            ? 'text-red-600'
+                            : trip.maxParticipants - trip.currentParticipants <= 10
+                            ? 'text-yellow-600'
+                            : 'text-green-600'
+                        }`}>
+                          {trip.maxParticipants - trip.currentParticipants}
+                        </span>
+                        {trip.maxParticipants - trip.currentParticipants <= 3 && (
+                          <div className="text-xs text-red-600 font-bold">⚠️ Almost Full!</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Booking Button */}
@@ -809,9 +841,9 @@ const TripDetailsEnhanced = () => {
                       <Phone className="w-4 h-4 mr-2" />
                       +91 83848 26414
                     </a>
-                    <a href="mailto:support@ghumakkars.com" className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    <a href="mailto:contact@ghumakkars.in" className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium">
                       <Mail className="w-4 h-4 mr-2" />
-                      support@ghumakkars.com
+                      contact@ghumakkars.in
                     </a>
                   </div>
                 </div>

@@ -233,7 +233,7 @@ const TripDetailsEnhanced = () => {
             <div className="flex flex-wrap gap-4 sm:gap-6">
               <div className="flex items-center space-x-2 text-white">
                 <Calendar className="w-5 h-5 text-white/80" />
-                <span className="font-semibold">{trip.duration}</span>
+                <span className="font-semibold">{trip.duration || `${trip.nights || 0} Nights ${trip.days || 1} Days`}</span>
               </div>
               <div className="flex items-center space-x-2 text-white">
                 <MapPin className="w-5 h-5 text-white/80" />
@@ -786,9 +786,9 @@ const TripDetailsEnhanced = () => {
                       <Phone className="w-4 h-4 mr-2" />
                       +91 83848 26414
                     </a>
-                    <a href="mailto:support@ghumakkars.com" className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium">
+                    <a href="mailto:contact@ghumakkars.in" className="flex items-center text-blue-600 hover:text-blue-700 text-sm font-medium">
                       <Mail className="w-4 h-4 mr-2" />
-                      support@ghumakkars.com
+                      contact@ghumakkars.in
                     </a>
                   </div>
                 </div>

@@ -30,6 +30,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
+import '../../styles/admin-sidebar.css';
 
 // Premium Icons Component
 const Icon = ({ name, className = "w-5 h-5" }) => {
@@ -71,9 +72,9 @@ const Icon = ({ name, className = "w-5 h-5" }) => {
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
       </svg>
     ),
-    sessions: (
+    analytics: (
       <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
       </svg>
     ),
     support: (
@@ -256,12 +257,12 @@ const AdminLayout = ({ children }) => {
           description: 'System Alerts'
         },
         { 
-          name: 'Sessions', 
+          name: 'Analytics', 
           icon: Shield, 
-          path: '/admin/sessions', 
+          path: '/admin/analytics', 
           color: 'cyan',
           badge: null,
-          description: 'Active Sessions'
+          description: 'Analytics Dashboard'
         },
         { 
           name: 'Support', 
@@ -270,6 +271,14 @@ const AdminLayout = ({ children }) => {
           color: 'yellow',
           badge: null,
           description: 'Help & Support'
+        },
+        { 
+          name: 'WhatsApp', 
+          icon: MessageSquare, 
+          path: '/admin/whatsapp', 
+          color: 'green',
+          badge: null,
+          description: 'WhatsApp Messaging'
         },
         { 
           name: 'Settings', 
@@ -327,106 +336,95 @@ const AdminLayout = ({ children }) => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50" style={{ fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif" }}>
       {/* Sidebar */}
       <motion.div 
-        initial={{ x: -300 }}
+        initial={{ x: -320 }}
         animate={{ 
-          x: sidebarOpen ? 0 : -300,
-          width: sidebarCollapsed ? '80px' : '280px'
+          x: sidebarOpen ? 0 : -320,
+          width: sidebarCollapsed ? '75px' : '300px'
         }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className={`fixed inset-y-0 left-0 z-50 bg-white/95 backdrop-blur-xl shadow-2xl border-r border-slate-200/50 ${
+        className={`fixed inset-y-0 left-0 z-50 bg-white shadow-2xl border-r border-gray-200 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-        } lg:translate-x-0 overflow-hidden`}
+        } lg:translate-x-0 overflow-hidden flex flex-col`}
       >
-        {/* Logo & Collapse Button */}
-        <div className="relative h-20 px-4 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 flex items-center justify-between">
-          {!sidebarCollapsed && (
+        {/* Logo Section */}
+        <div className="h-[80px] px-5 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 flex items-center justify-between shrink-0">
+          {!sidebarCollapsed ? (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="flex items-center space-x-3"
+              className="flex items-center gap-3 w-full"
             >
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
+              <div className="w-11 h-11 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center shadow-lg border border-white/30">
+                <Zap className="w-7 h-7 text-white" strokeWidth={2.5} />
               </div>
-              <div>
-                <h1 className="text-xl font-black text-white tracking-tight">Ghumakkars</h1>
-                <p className="text-xs text-blue-100 font-semibold">Admin Panel</p>
+              <div className="flex-1">
+                <h1 className="text-lg font-bold text-white leading-tight">Ghumakkars</h1>
+                <p className="text-xs text-blue-100/90 font-medium">Admin Panel</p>
               </div>
             </motion.div>
-          )}
-          
-          {sidebarCollapsed && (
+          ) : (
             <div className="w-full flex justify-center">
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-lg">
-                <Zap className="w-6 h-6 text-white" />
+              <div className="w-11 h-11 bg-white/20 backdrop-blur-lg rounded-xl flex items-center justify-center shadow-lg border border-white/30">
+                <Zap className="w-7 h-7 text-white" strokeWidth={2.5} />
               </div>
             </div>
           )}
           
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="hidden lg:flex absolute -right-3 top-1/2 transform -translate-y-1/2 w-6 h-6 bg-white rounded-full items-center justify-center shadow-lg border border-slate-200 text-slate-600 hover:text-blue-600 transition-colors"
-          >
-            {sidebarCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
-          </motion.button>
+          {!sidebarCollapsed && (
+            <motion.button
+              whileHover={{ scale: 1.05, rotate: 90 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden lg:flex w-8 h-8 bg-white/20 hover:bg-white/30 rounded-lg items-center justify-center backdrop-blur-sm transition-all border border-white/30"
+              title="Collapse sidebar"
+            >
+              <ChevronLeft className="w-4 h-4 text-white" />
+            </motion.button>
+          )}
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
-          {/* Search Bar */}
-          {!sidebarCollapsed && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="relative"
+        {sidebarCollapsed && (
+          <div className="flex items-center justify-center py-3 border-b border-gray-100">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSidebarCollapsed(false)}
+              className="w-9 h-9 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center justify-center transition-colors text-blue-600"
+              title="Expand sidebar"
             >
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search menu..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
-            </motion.div>
-          )}
+              <ChevronRight className="w-4 h-4" />
+            </motion.button>
+          </div>
+        )}
 
-          {/* Quick Stats */}
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-5 custom-scrollbar flex flex-col">
+          {/* Search Bar - Only show when not collapsed */}
           {!sidebarCollapsed && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="grid grid-cols-2 gap-2"
+              className="mb-5 relative"
             >
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-3 rounded-xl border border-blue-200">
-                <div className="flex items-center space-x-2 mb-1">
-                  <div className="w-6 h-6 bg-blue-500 rounded-lg flex items-center justify-center">
-                    <TrendingUp className="w-3 h-3 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold text-blue-900">Bookings</span>
-                </div>
-                <p className="text-lg font-black text-blue-700">{stats.totalBookings}</p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-3 rounded-xl border border-emerald-200">
-                <div className="flex items-center space-x-2 mb-1">
-                  <div className="w-6 h-6 bg-emerald-500 rounded-lg flex items-center justify-center">
-                    <DollarSign className="w-3 h-3 text-white" />
-                  </div>
-                  <span className="text-xs font-semibold text-emerald-900">Revenue</span>
-                </div>
-                <p className="text-lg font-black text-emerald-700">₹{(stats.revenue / 1000).toFixed(0)}K</p>
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Quick search..."
+                  className="w-full pl-11 pr-4 py-3 bg-gray-50 hover:bg-gray-100 border-0 rounded-xl text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+                />
               </div>
             </motion.div>
           )}
           
           {/* Navigation Sections */}
-          <nav className="space-y-2">
-            {filteredSections.map((section, sectionIndex) => (
-              <div key={section.title} className="pb-2 border-b border-slate-200/50 last:border-0">
+          <div className="flex-1">
+            <nav className="space-y-1">
+              {filteredSections.map((section, sectionIndex) => (
+              <div key={section.title} className="mb-4 last:mb-0">
+                {/* Section Header - Only show when not collapsed */}
                 {!sidebarCollapsed && (
                   <motion.button
                     initial={{ opacity: 0 }}
@@ -436,19 +434,19 @@ const AdminLayout = ({ children }) => {
                       ...prev,
                       [section.title]: !prev[section.title]
                     }))}
-                    className="w-full flex items-center justify-between px-3 py-2.5 mb-2 text-xs font-extrabold text-slate-700 uppercase tracking-wider hover:text-slate-900 transition-all rounded-lg hover:bg-gradient-to-r hover:from-slate-100 hover:to-transparent group"
+                    className="w-full flex items-center justify-between px-3 py-2.5 mb-2.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider hover:text-gray-600 transition-all group rounded-lg hover:bg-gray-50"
                   >
-                    <div className="flex items-center space-x-2">
-                      <div className={`w-1 h-4 rounded-full transition-all ${
-                        expandedSections[section.title] ? 'bg-blue-500' : 'bg-slate-300'
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-1.5 h-3.5 rounded-full transition-all ${
+                        expandedSections[section.title] ? 'bg-gradient-to-b from-blue-500 to-blue-600 shadow-sm' : 'bg-gray-300'
                       }`} />
-                      <span>{section.title}</span>
+                      <span className="select-none font-medium">{section.title}</span>
                     </div>
                     <motion.div
                       animate={{ rotate: expandedSections[section.title] ? 180 : 0 }}
                       transition={{ duration: 0.2 }}
                     >
-                      <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-slate-600" />
+                      <ChevronDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-gray-600" />
                     </motion.div>
                   </motion.button>
                 )}
@@ -463,117 +461,243 @@ const AdminLayout = ({ children }) => {
                       className="space-y-1 overflow-hidden"
                     >
                       {section.items.map((item, itemIndex) => {
-                    const Icon = item.icon;
-                    const active = isActive(item.path);
-                    const colorClasses = getColorClasses(item.color);
-                    
-                    return (
-                      <motion.button
-                        key={item.name}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: (sectionIndex * 0.05) + (itemIndex * 0.02) }}
-                        whileHover={{ scale: 1.02, x: 4 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => navigate(item.path)}
-                        className={`group relative w-full flex items-center ${
-                          sidebarCollapsed ? 'justify-center px-3' : 'px-3'
-                        } py-3 text-left rounded-xl transition-all duration-200 ${
-                          active
-                            ? `${colorClasses.activeBg} ${colorClasses.text} shadow-md border ${colorClasses.border}`
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                        }`}
-                        title={sidebarCollapsed ? item.name : ''}
-                      >
-                        <div className={`flex items-center justify-center w-9 h-9 rounded-lg ${
-                          active
-                            ? `${colorClasses.bg} ${colorClasses.text}`
-                            : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700'
-                        } ${sidebarCollapsed ? '' : 'mr-3'}`}>
-                          <Icon className="w-4 h-4" />
-                        </div>
+                        const Icon = item.icon;
+                        const active = isActive(item.path);
+                        const colorClasses = getColorClasses(item.color);
                         
-                        {!sidebarCollapsed && (
-                          <>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-semibold text-sm">{item.name}</div>
-                              <div className="text-xs text-slate-500 truncate">{item.description}</div>
+                        return (
+                          <motion.button
+                            key={item.name}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: (sectionIndex * 0.05) + (itemIndex * 0.02) }}
+                            whileHover={{ 
+                              scale: 1.01,
+                              x: active ? 0 : 4
+                            }}
+                            whileTap={{ scale: 0.99 }}
+                            onClick={() => navigate(item.path)}
+                            className={`group relative w-full flex items-center gap-3 px-3 py-2.5 text-left rounded-xl transition-all duration-200 ${
+                              active
+                                ? 'bg-white shadow-md border-2 border-blue-300'
+                                : 'hover:bg-white/50 hover:shadow-sm border border-transparent'
+                            }`}
+                            title={sidebarCollapsed ? item.name : ''}
+                          >
+                            {/* Icon */}
+                            <div className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all transform ${
+                              active
+                                ? `${colorClasses.bg} ${colorClasses.text} shadow-lg scale-105`
+                                : 'bg-gradient-to-br from-gray-100 to-gray-50 text-gray-500 group-hover:from-gray-200 group-hover:to-gray-100 group-hover:text-gray-700'
+                            } ${sidebarCollapsed ? 'mx-auto' : ''}`}>
+                              <Icon className="w-4.5 h-4.5" strokeWidth={2.5} />
                             </div>
                             
-                            {item.badge && (
+                            {/* Text Content - Only show when not collapsed */}
+                            {!sidebarCollapsed && (
+                              <div className="flex-1 min-w-0">
+                                <div className={`font-bold text-sm ${active ? colorClasses.text : 'text-gray-700'}`}>
+                                  {item.name}
+                                </div>
+                                <div className={`text-xs mt-0.5 ${active ? colorClasses.text.replace('600', '500') : 'text-gray-500'}`}>
+                                  {item.description}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Badge */}
+                            {!sidebarCollapsed && item.badge && (
                               <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                className="ml-2 px-2 py-0.5 bg-red-500 text-white text-xs font-bold rounded-full min-w-[20px] text-center"
+                                className="ml-auto px-2.5 py-1 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full min-w-[22px] text-center shadow-sm"
                               >
                                 {item.badge}
                               </motion.div>
                             )}
                             
+                            {/* Active Indicator - Gradient */}
                             {active && (
                               <motion.div
                                 layoutId="activeIndicator"
-                                className={`absolute right-0 top-1/2 transform -translate-y-1/2 w-1 h-8 ${colorClasses.text.replace('text-', 'bg-')} rounded-l-full`}
+                                className="absolute left-0 top-0 bottom-0 w-1 rounded-r-full bg-gradient-to-b from-blue-500 via-blue-600 to-blue-500 shadow-lg"
                               />
                             )}
-                          </>
-                        )}
-                        
-                        {sidebarCollapsed && item.badge && (
-                          <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                            {item.badge}
-                          </div>
-                        )}
-                      </motion.button>
-                    );
-                  })}
+                            
+                            {/* Badge for collapsed state */}
+                            {sidebarCollapsed && item.badge && (
+                              <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-red-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-md">
+                                {item.badge}
+                              </div>
+                            )}
+                          </motion.button>
+                        );
+                      })}
                     </motion.div>
                   )}
                 </AnimatePresence>
               </div>
             ))}
-          </nav>
+            </nav>
+          </div>
 
-          {/* User Card at Bottom */}
+          {/* User Card at Bottom - Only show when not collapsed */}
           {!sidebarCollapsed && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="mt-auto p-3 bg-gradient-to-br from-slate-50 to-blue-50 border border-slate-200 rounded-xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="mt-auto pt-5 border-t-2 border-gradient-to-r from-gray-100 via-gray-200 to-gray-100"
             >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-sm">
-                    {adminUser?.name?.charAt(0).toUpperCase()}
-                  </span>
+              <div className="relative bg-gradient-to-br from-white to-gray-50 rounded-2xl p-4 shadow-lg border border-gray-200/50 hover:shadow-xl transition-all group cursor-pointer"
+                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                      <span className="text-white font-bold text-base">
+                        {adminUser?.name?.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">{adminUser?.name}</p>
+                    <p className="text-xs text-gray-500 font-semibold">Administrator</p>
+                  </div>
+                  <motion.button
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setProfileDropdownOpen(!profileDropdownOpen);
+                    }}
+                    className="w-9 h-9 rounded-xl hover:bg-gray-200 flex items-center justify-center transition-colors bg-white border border-gray-200"
+                  >
+                    <ChevronDown className={`w-4 h-4 text-gray-600 transition-transform ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                  </motion.button>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-slate-800 truncate">{adminUser?.name}</p>
-                  <p className="text-xs text-slate-500">Administrator</p>
-                </div>
+                
+                {/* Enhanced Dropdown Menu */}
+                {profileDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute bottom-full right-0 mb-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 py-2 z-50"
+                  >
+                    <button 
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors flex items-center gap-3 rounded-xl mx-1"
+                    >
+                      <div className="w-9 h-9 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <User className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="font-semibold">View Profile</span>
+                        <span className="text-xs text-gray-500">Manage account</span>
+                      </div>
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors flex items-center gap-3 rounded-xl mx-1"
+                    >
+                      <div className="w-9 h-9 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <Settings className="w-4 h-4 text-purple-600" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="font-semibold">Settings</span>
+                        <span className="text-xs text-gray-500">Preferences</span>
+                      </div>
+                    </button>
+                    <div className="my-2 border-t border-gray-200 mx-2"></div>
+                    <button 
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                        handleLogout();
+                      }}
+                      className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3 rounded-xl mx-1"
+                    >
+                      <div className="w-9 h-9 bg-red-100 rounded-lg flex items-center justify-center">
+                        <LogOut className="w-4 h-4 text-red-600" />
+                      </div>
+                      <div className="flex flex-col items-start">
+                        <span className="font-semibold">Logout</span>
+                        <span className="text-xs text-red-500">Sign out</span>
+                      </div>
+                    </button>
+                  </motion.div>
+                )}
               </div>
+            </motion.div>
+          )}
+          
+          {/* User Profile - Collapsed State */}
+          {sidebarCollapsed && (
+            <div className="mt-6 pt-4 border-t border-gray-200 flex justify-center">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md cursor-pointer hover:scale-105 transition-transform"
+                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              >
+                <span className="text-white font-bold text-sm">
+                  {adminUser?.name?.charAt(0).toUpperCase()}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {/* Dropdown Menu for Collapsed State */}
+          {sidebarCollapsed && profileDropdownOpen && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="absolute bottom-16 left-2 w-64 bg-white rounded-2xl shadow-2xl border border-gray-200 py-2 z-50"
+            >
+              <div className="px-3 py-2.5 border-b border-gray-200">
+                <p className="text-sm font-bold text-gray-900">{adminUser?.name}</p>
+                <p className="text-xs text-gray-500">Administrator</p>
+              </div>
+              <button 
+                onClick={() => setProfileDropdownOpen(false)}
+                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-blue-50 transition-colors flex items-center gap-3"
+              >
+                <User className="w-4 h-4" />
+                <span className="font-medium">View Profile</span>
+              </button>
+              <button 
+                onClick={() => {
+                  setProfileDropdownOpen(false);
+                  handleLogout();
+                }}
+                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="font-medium">Logout</span>
+              </button>
             </motion.div>
           )}
         </div>
       </motion.div>
 
       {/* Main Content */}
-      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-[280px]'}`}>
+      <div className={`transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-[75px]' : 'lg:ml-[300px]'}`}>
         {/* Top Navbar */}
-        <header className="bg-white/80 backdrop-blur-xl shadow-sm border-b border-slate-200/50 sticky top-0 z-40">
+        <header className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-40">
           <div className="flex items-center justify-between px-8 py-5">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setSidebarOpen(!sidebarOpen)}
-                className="lg:hidden p-2.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors duration-200"
+                className="lg:hidden p-2.5 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors duration-200"
               >
-                <Icon name="menu" className="w-5 h-5" />
+                <Menu className="w-5 h-5 text-gray-700" />
               </button>
               <div>
-                <h2 className="text-2xl font-bold text-slate-800 tracking-tight">
+                <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
                   {allMenuItems.find(item => isActive(item.path))?.name || 'Dashboard'}
                 </h2>
-                <p className="text-sm text-slate-500 font-medium">
+                <p className="text-sm text-gray-500 font-medium">
                   {new Date().toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     year: 'numeric', 
@@ -584,62 +708,60 @@ const AdminLayout = ({ children }) => {
               </div>
             </div>
 
-            {/* Profile Dropdown */}
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-3 px-4 py-2 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors duration-200 cursor-pointer">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-teal-600 rounded-xl flex items-center justify-center shadow-sm">
+            {/* Profile & Actions */}
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 px-4 py-2 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors duration-200 cursor-pointer group"
+                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              >
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-105 transition-transform">
                   <span className="text-white text-sm font-bold">
                     {adminUser.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div className="hidden md:block">
-                  <p className="text-sm font-semibold text-slate-800">{adminUser.name}</p>
-                  <p className="text-xs text-slate-500 font-medium">Administrator</p>
+                  <p className="text-sm font-semibold text-gray-800">{adminUser.name}</p>
+                  <p className="text-xs text-gray-500 font-medium">Administrator</p>
                 </div>
               </div>
               
               <div className="relative profile-dropdown">
                 <button 
                   onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl transition-colors duration-200"
+                  className="p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-200"
                 >
-                  <Icon name="chevron" className={`w-4 h-4 transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${profileDropdownOpen ? 'rotate-180' : ''}`} />
                 </button>
                 
                 {/* Dropdown Menu */}
                 {profileDropdownOpen && (
-                  <div className="absolute right-0 mt-3 w-56 bg-white/95 backdrop-blur-xl rounded-2xl shadow-xl border border-slate-200/50 py-2 z-50 animate-in slide-in-from-top-2 duration-200">
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50">
                     <button 
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 flex items-center space-x-3"
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3"
                     >
-                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                        <Icon name="users" className="w-4 h-4 text-slate-600" />
-                      </div>
-                      <span className="font-medium">Profile</span>
+                      <User className="w-4 h-4" />
+                      <span className="font-medium">View Profile</span>
                     </button>
                     <button 
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className="w-full text-left px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors duration-200 flex items-center space-x-3"
+                      onClick={() => {
+                        setProfileDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-3"
                     >
-                      <div className="w-8 h-8 bg-slate-100 rounded-lg flex items-center justify-center">
-                        <Icon name="settings" className="w-4 h-4 text-slate-600" />
-                      </div>
+                      <Settings className="w-4 h-4" />
                       <span className="font-medium">Settings</span>
                     </button>
-                    <hr className="my-2 border-slate-200" />
+                    <div className="my-2 border-t border-gray-200"></div>
                     <button 
                       onClick={() => {
                         setProfileDropdownOpen(false);
                         handleLogout();
                       }}
-                      className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200 flex items-center space-x-3"
+                      className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-3"
                     >
-                      <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
-                        <svg className="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                        </svg>
-                      </div>
+                      <LogOut className="w-4 h-4" />
                       <span className="font-medium">Logout</span>
                     </button>
                   </div>
@@ -650,8 +772,8 @@ const AdminLayout = ({ children }) => {
         </header>
 
         {/* Page Content */}
-        <main className="p-8">
-          <div className="max-w-7xl mx-auto">
+        <main className="p-4 md:p-6 lg:p-8">
+          <div className="max-w-full mx-auto">
             {children}
           </div>
         </main>
@@ -659,8 +781,11 @@ const AdminLayout = ({ children }) => {
 
       {/* Mobile Overlay */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/40 z-40 lg:hidden backdrop-blur-sm"
           onClick={() => setSidebarOpen(false)}
         />
       )}

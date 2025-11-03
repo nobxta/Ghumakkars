@@ -56,9 +56,15 @@ const userService = {
       }
 
       const config = isFormData ? {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        }
+        // Don't set Content-Type for FormData - let browser set it with boundary
+        transformRequest: [
+          function (data, headers) {
+            if (data instanceof FormData) {
+              delete headers['Content-Type'];
+            }
+            return data;
+          }
+        ]
       } : {};
       
       const response = await api.put('/api/user/profile', profileData, config);
@@ -128,6 +134,38 @@ const userService = {
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch users');
+    }
+  },
+
+  // Add money to wallet (admin only)
+  addWalletMoney: async (data) => {
+    try {
+      const response = await api.post('/api/user/admin/add-wallet-money', data);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to add money to wallet');
+    }
+  },
+
+  // Get detailed user information (admin only)
+  getUserDetails: async (userId) => {
+    try {
+      const response = await api.get(`/api/user/admin/details/${userId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch user details');
+    }
+  },
+
+  // Get user bookings (for My Trips)
+  getMyBookings: async () => {
+    try {
+      const response = await api.get('/api/booking/my-bookings', { 
+        params: { limit: 100 } // Get all bookings
+      });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch bookings');
     }
   }
 };

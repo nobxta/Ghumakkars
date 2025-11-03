@@ -91,7 +91,7 @@ class ErrorBoundary extends React.Component {
               {/* Support Link */}
               <p className="mt-6 text-sm text-slate-500">
                 Need help?{' '}
-                <a href="mailto:support@ghumakkars.com" className="text-blue-600 hover:underline font-semibold">
+                <a href="mailto:contact@ghumakkars.in" className="text-blue-600 hover:underline font-semibold">
                   Contact Support
                 </a>
               </p>

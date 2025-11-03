@@ -970,10 +970,15 @@ const Trips = () => {
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center space-x-3">
                             <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                              {booking.user?.name?.charAt(0) || 'U'}
+                              {(booking.user?.firstName || booking.user?.name)?.charAt(0) || 'U'}
                             </div>
                             <div>
-                              <h4 className="font-bold text-slate-800">{booking.user?.name || 'N/A'}</h4>
+                              <h4 className="font-bold text-slate-800">
+                                {booking.user?.firstName 
+                                  ? `${booking.user.firstName} ${booking.user.lastName || ''}`.trim()
+                                  : booking.user?.name || 'N/A'
+                                }
+                              </h4>
                               <p className="text-sm text-slate-600">{booking.user?.email || 'N/A'}</p>
                             </div>
                           </div>

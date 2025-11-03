@@ -194,26 +194,43 @@ const BookingModal = ({ isOpen, onClose, trip, previousBooking = null }) => {
     try {
       const response = await userService.getProfile();
       if (response.user) {
-        setUserProfile(response.user);
-        // Auto-fill first passenger with user details
+        const user = response.user;
+        setUserProfile(user);
+        
+        // Build full name from firstName and lastName
+        const fullName = user.firstName 
+          ? `${user.firstName} ${user.lastName || ''}`.trim()
+          : user.name || '';
+        
+        // Calculate age from date of birth if available
+        let age = '';
+        if (user.dateOfBirth) {
+          const today = new Date();
+          const birthDate = new Date(user.dateOfBirth);
+          age = (today.getFullYear() - birthDate.getFullYear()).toString();
+        }
+        
+        // Auto-fill contact details with user profile data
         setContactDetails({
-          name: response.user.name || '',
-          email: response.user.email || '',
-          phone: response.user.phone || '',
+          name: fullName,
+          email: user.email || '',
+          phone: user.phone || '',
           emergencyContact: {
-            name: response.user.emergencyContact?.name || '',
-            phone: response.user.emergencyContact?.phone || '',
-            relationship: response.user.emergencyContact?.relationship || ''
+            name: user.emergencyContact?.name || '',
+            phone: user.emergencyContact?.phone || '',
+            relationship: user.emergencyContact?.relationship || ''
           }
         });
+        
+        // Auto-fill first passenger with user details
         setPassengers([{
-          name: response.user.name || '',
-          phone: response.user.phone || '',
-          age: response.user.age || '',
+          name: fullName,
+          phone: user.phone || '',
+          age: age,
           college: {
-            name: response.user.college?.name || '',
-            id: response.user.college?.id || '',
-            notPreferToSay: response.user.college?.notPreferToSay || false
+            name: user.collegeName || '',
+            id: user.collegeId || '',
+            notPreferToSay: false
           }
         }]);
       }

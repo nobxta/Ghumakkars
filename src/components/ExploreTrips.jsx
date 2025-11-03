@@ -69,15 +69,25 @@ const ExploreTrips = () => {
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [likedTrips, setLikedTrips] = useState(() => {
-    try {
-      const raw = localStorage.getItem('likedTrips');
-      const arr = raw ? JSON.parse(raw) : [];
-      return new Set(arr);
-    } catch {
-      return new Set();
-    }
-  });
+  const [likedTrips, setLikedTrips] = useState(new Set());
+  const [loadingLikes, setLoadingLikes] = useState(true);
+
+  // Fetch liked trips from backend
+  useEffect(() => {
+    const fetchLikedTrips = async () => {
+      try {
+        const res = await tripService.getLikedTrips();
+        const likedIds = (res?.data?.likedTrips || []).map(t => t._id || t.id);
+        setLikedTrips(new Set(likedIds));
+      } catch (error) {
+        console.error('Error fetching liked trips:', error);
+        // If user is not authenticated, silently fail
+      } finally {
+        setLoadingLikes(false);
+      }
+    };
+    fetchLikedTrips();
+  }, []);
 
   // Fetch trips from API
   useEffect(() => {
@@ -149,7 +159,8 @@ const ExploreTrips = () => {
     setFilteredTrips(filtered);
   }, [trips, searchTerm, selectedCategory, selectedDifficulty, selectedDuration, priceRange, sortBy]);
 
-  const handleTripClick = (tripId) => {
+  const handleTripClick = (trip) => {
+    const tripId = trip._id || trip.id;
     console.log('Clicking on trip with ID:', tripId);
     console.log('Trip ID type:', typeof tripId);
     if (!tripId || tripId === 'undefined' || tripId === 'null') {
@@ -157,18 +168,54 @@ const ExploreTrips = () => {
       alert('Invalid trip ID. Please try again.');
       return;
     }
-    navigate(`/trip/${tripId}`);
+    // Navigate to past trip page if trip is past, otherwise regular trip page
+    if (isPastTrip(trip.departureDate)) {
+      navigate(`/past-trip/${tripId}`);
+    } else {
+      navigate(`/trip/${tripId}`);
+    }
   };
 
-  const toggleLike = (e, tripId) => {
+  const toggleLike = async (e, tripId) => {
     e.stopPropagation();
     e.preventDefault();
+    
+    const isLiked = likedTrips.has(tripId);
+    
+    // Optimistic update
     setLikedTrips(prev => {
       const next = new Set(prev);
-      if (next.has(tripId)) next.delete(tripId); else next.add(tripId);
-      try { localStorage.setItem('likedTrips', JSON.stringify(Array.from(next))); } catch {}
+      if (isLiked) {
+        next.delete(tripId);
+      } else {
+        next.add(tripId);
+      }
       return next;
     });
+
+    try {
+      if (isLiked) {
+        await tripService.unlikeTrip(tripId);
+      } else {
+        await tripService.likeTrip(tripId);
+      }
+    } catch (error) {
+      console.error('Error toggling like:', error);
+      // Revert optimistic update on error
+      setLikedTrips(prev => {
+        const next = new Set(prev);
+        if (isLiked) {
+          next.add(tripId);
+        } else {
+          next.delete(tripId);
+        }
+        return next;
+      });
+      // Only show alert if user is authenticated (likely a real error)
+      if (error.message && !error.message.includes('401')) {
+        alert('Failed to update like. Please try again.');
+      }
+    }
   };
 
   const formatPrice = (price) => {
@@ -192,6 +239,16 @@ const ExploreTrips = () => {
     if (percentage >= 80) return 'text-red-600';
     if (percentage >= 60) return 'text-yellow-600';
     return 'text-green-600';
+  };
+
+  const isPastTrip = (departureDate) => {
+    if (!departureDate) return false;
+    const now = new Date();
+    const tripDate = new Date(departureDate);
+    // Reset time to midnight for accurate date comparison
+    now.setHours(0, 0, 0, 0);
+    tripDate.setHours(0, 0, 0, 0);
+    return tripDate < now;
   };
 
   if (loading) {
@@ -303,8 +360,17 @@ const ExploreTrips = () => {
                     <option value="2 Days">2 Days</option>
                     <option value="3 Days">3 Days</option>
                     <option value="4 Days">4 Days</option>
-                    <option value="1 Week">1 Week</option>
-                    <option value="2 Weeks">2 Weeks</option>
+                    <option value="5 Days">5 Days</option>
+                    <option value="6 Days">6 Days</option>
+                    <option value="7 Days">7 Days</option>
+                    <option value="8 Days">8 Days</option>
+                    <option value="9 Days">9 Days</option>
+                    <option value="10 Days">10 Days</option>
+                    <option value="11 Days">11 Days</option>
+                    <option value="12 Days">12 Days</option>
+                    <option value="13 Days">13 Days</option>
+                    <option value="14 Days">14 Days</option>
+                    <option value="15 Days">15 Days</option>
                   </select>
                 </div>
 
@@ -359,7 +425,7 @@ const ExploreTrips = () => {
               return (
               <motion.div
                 key={tripId}
-                onClick={() => handleTripClick(tripId)}
+                onClick={() => handleTripClick(trip)}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
@@ -375,17 +441,22 @@ const ExploreTrips = () => {
                   
                   {/* Badges */}
                   <div className="absolute top-4 left-4 flex flex-col space-y-2">
-                    {trip.isNew && (
+                    {isPastTrip(trip.departureDate) && (
+                      <span className="px-3 py-1 bg-slate-500 text-white text-xs font-semibold rounded-full">
+                        Past trip
+                      </span>
+                    )}
+                    {!isPastTrip(trip.departureDate) && trip.isNew && (
                       <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
                         New
                       </span>
                     )}
-                    {trip.isPopular && (
+                    {!isPastTrip(trip.departureDate) && trip.isPopular && (
                       <span className="px-3 py-1 bg-orange-500 text-white text-xs font-semibold rounded-full">
                         Popular
                       </span>
                     )}
-                    {trip.isEarlyBird && (
+                    {!isPastTrip(trip.departureDate) && trip.isEarlyBird && (
                       <span className="px-3 py-1 bg-purple-500 text-white text-xs font-semibold rounded-full">
                         Early Bird
                       </span>
@@ -401,11 +472,17 @@ const ExploreTrips = () => {
                     <Icon name="heart" className={`w-5 h-5 ${likedTrips.has(tripId) ? 'text-white' : 'text-slate-600'}`} />
                   </button>
 
-                  {/* Availability */}
+                  {/* Availability or Past Trip Badge */}
                   <div className="absolute bottom-4 right-4 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-1">
-                    <span className={`text-sm font-semibold ${getAvailabilityColor(trip.currentParticipants, trip.maxParticipants)}`}>
-                      {trip.maxParticipants - trip.currentParticipants} spots left
-                    </span>
+                    {isPastTrip(trip.departureDate) ? (
+                      <span className="text-sm font-semibold text-slate-300">
+                        Past trip
+                      </span>
+                    ) : (
+                      <span className={`text-sm font-semibold ${getAvailabilityColor(trip.currentParticipants, trip.maxParticipants)}`}>
+                        {trip.maxParticipants - trip.currentParticipants} spots left
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -435,7 +512,7 @@ const ExploreTrips = () => {
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-slate-600">
                       <Icon name="clock" className="w-4 h-4" />
-                      <span>{trip.duration}</span>
+                      <span>{trip.duration || `${trip.nights || 0} Nights ${trip.days || 1} Days`}</span>
                     </div>
                     <div className="flex items-center space-x-2 text-sm text-slate-600">
                       <Icon name="users" className="w-4 h-4" />

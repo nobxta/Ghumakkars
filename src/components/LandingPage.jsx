@@ -7,11 +7,15 @@ import 'swiper/css'
 import 'swiper/css/effect-coverflow'
 import { useAuth } from '../contexts/AuthContext'
 import contactService from '../services/contactService'
+import NotificationDropdown from './NotificationDropdown'
 
 const LandingPage = () => {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const [isNavbarVisible, setIsNavbarVisible] = useState(false)
   const [openFAQ, setOpenFAQ] = useState(null)
+  const [imgError, setImgError] = useState(false)
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -171,6 +175,11 @@ const LandingPage = () => {
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
+  // Reset image error when user changes
+  useEffect(() => {
+    setImgError(false)
+  }, [user?.profilePicture])
+
   const handleFormSubmit = async (e) => {
     e.preventDefault()
     setFormLoading(true)
@@ -207,68 +216,378 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 pb-16 md:pb-0">
-      {/* Floating Navbar */}
+      {/* Enhanced Floating Navbar */}
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isNavbarVisible 
-          ? 'bg-white/90 backdrop-blur-md shadow-lg py-4' 
-          : 'bg-transparent py-6'
+          ? 'bg-white/95 backdrop-blur-xl shadow-lg py-3 border-b border-purple-100' 
+          : 'bg-white/80 backdrop-blur-sm py-4'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center">
-            <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-              Ghumakkars
+            {/* Enhanced Logo */}
+            <Link to="/" className="flex items-center space-x-2 group cursor-pointer">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300"></div>
+                <div className="relative bg-gradient-to-r from-purple-600 to-indigo-600 p-2 rounded-xl shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
             </div>
-            <div className="hidden md:flex space-x-8">
-              <Link to="/explore-trips" className="text-gray-700 hover:text-purple-600 transition-colors">Explore Trips</Link>
+              </div>
+              <span className="text-2xl font-extrabold bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent group-hover:scale-105 transition-transform duration-300">
+                Ghumakkars
+              </span>
+            </Link>
+            
+            {/* Enhanced Navigation Links */}
+            <div className="hidden md:flex items-center space-x-1">
+              <Link 
+                to="/explore-trips" 
+                className="relative px-4 py-2 text-sm font-semibold text-gray-700 hover:text-purple-600 transition-colors duration-200 rounded-lg hover:bg-purple-50 group"
+              >
+                Explore Trips
+                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+              </Link>
               {user ? (
-                // Logged in navbar items
                 <>
-                  <Link to="/my-trips" className="text-gray-700 hover:text-purple-600 transition-colors">My Trips</Link>
-                  <a href="#community" className="text-gray-700 hover:text-purple-600 transition-colors">Community</a>
-                  <a href="#contact" className="text-gray-700 hover:text-purple-600 transition-colors">Support</a>
-                  <Link to="/profile" className="text-gray-700 hover:text-purple-600 transition-colors">Profile</Link>
+                  <Link 
+                    to="/my-trips" 
+                    className="relative px-4 py-2 text-sm font-semibold text-gray-700 hover:text-purple-600 transition-colors duration-200 rounded-lg hover:bg-purple-50 group"
+                  >
+                    My Trips
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                  </Link>
+                  <Link 
+                    to="/profile" 
+                    className="relative px-4 py-2 text-sm font-semibold text-gray-700 hover:text-purple-600 transition-colors duration-200 rounded-lg hover:bg-purple-50 group"
+                  >
+                    Profile
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                  </Link>
+                  
+                  {/* Search Icon */}
+                  <Link
+                    to="/explore-trips"
+                    className="p-2 rounded-lg hover:bg-purple-50 transition-colors group"
+                  >
+                    <svg className="w-5 h-5 text-gray-600 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </Link>
+                  
+                  {/* Notifications Dropdown */}
+                  <NotificationDropdown />
                 </>
               ) : (
-                // Guest navbar items
                 <>
-                  <a href="#home" className="text-gray-700 hover:text-purple-600 transition-colors">Home</a>
-                  <a href="#destinations" className="text-gray-700 hover:text-purple-600 transition-colors">Destinations</a>
-                  <a href="#features" className="text-gray-700 hover:text-purple-600 transition-colors">Features</a>
-                  <a href="#faq" className="text-gray-700 hover:text-purple-600 transition-colors">FAQ</a>
-                  <a href="#contact" className="text-gray-700 hover:text-purple-600 transition-colors">Contact</a>
+                  <a 
+                    href="#destinations" 
+                    className="relative px-4 py-2 text-sm font-semibold text-gray-700 hover:text-purple-600 transition-colors duration-200 rounded-lg hover:bg-purple-50 group"
+                  >
+                    Destinations
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                  </a>
+                  <a 
+                    href="#features" 
+                    className="relative px-4 py-2 text-sm font-semibold text-gray-700 hover:text-purple-600 transition-colors duration-200 rounded-lg hover:bg-purple-50 group"
+                  >
+                    Features
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                  </a>
+                  <a 
+                    href="#faq" 
+                    className="relative px-4 py-2 text-sm font-semibold text-gray-700 hover:text-purple-600 transition-colors duration-200 rounded-lg hover:bg-purple-50 group"
+                  >
+                    FAQ
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                  </a>
+                  <a 
+                    href="#contact" 
+                    className="relative px-4 py-2 text-sm font-semibold text-gray-700 hover:text-purple-600 transition-colors duration-200 rounded-lg hover:bg-purple-50 group"
+                  >
+                    Contact
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-gradient-to-r from-purple-600 to-indigo-600 scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></span>
+                  </a>
                 </>
               )}
             </div>
-            <div className="flex items-center space-x-4">
+            
+            {/* Enhanced User Section */}
+            <div className="flex items-center space-x-3">
               {user ? (
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-semibold">
-                        {user.name.charAt(0).toUpperCase()}
+                <>
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="md:hidden p-2 rounded-lg hover:bg-purple-50 transition-colors"
+                  >
+                    <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {isMobileMenuOpen ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      )}
+                    </svg>
+                  </button>
+
+                  {/* Desktop User Profile */}
+                  <div className="hidden md:flex items-center space-x-3 group relative">
+                    <div className="relative">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-full blur opacity-50 group-hover:opacity-75 transition-opacity duration-300"></div>
+                      <button
+                        onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                        className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white shadow-md ring-2 ring-purple-200 group-hover:ring-purple-400 transition-all duration-300 cursor-pointer"
+                      >
+                        {user.profilePicture && !imgError ? (
+                          <img 
+                            src={user.profilePicture} 
+                            alt={user.firstName || user.name}
+                            className="w-full h-full object-cover"
+                            onError={() => setImgError(true)}
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center">
+                            <span className="text-white text-sm font-bold">
+                              {(user.firstName || user.name).charAt(0).toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-gray-700 font-medium hidden sm:block">Welcome, {user.name}</span>
+                        )}
+                      </button>
+                      {/* Online Status Indicator */}
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-sm"></div>
                   </div>
                   <button 
-                    onClick={logout}
-                    className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors text-sm"
+                      onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                      className="hidden lg:block cursor-pointer text-left"
                   >
-                    Logout
+                      <p className="text-sm font-semibold text-gray-800">
+                        {(user.firstName || '') + (user.lastName ? ' ' + user.lastName : '') || user.name}
+                      </p>
+                      <p className="text-xs text-gray-500">Active</p>
                   </button>
+
+                    {/* Profile Dropdown */}
+                    {isProfileDropdownOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
+                      <div className="p-4 border-b border-gray-100 bg-gradient-to-br from-purple-50 to-indigo-50">
+                        <div className="flex items-center space-x-3 mb-3">
+                          <div className="w-12 h-12 rounded-full overflow-hidden ring-2 ring-purple-200 shadow-md">
+                            {user.profilePicture && !imgError ? (
+                              <img 
+                                src={user.profilePicture} 
+                                alt={user.firstName || user.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-gradient-to-r from-purple-600 to-indigo-600 flex items-center justify-center">
+                                <span className="text-white text-lg font-bold">
+                                  {(user.firstName || user.name).charAt(0).toUpperCase()}
+                                </span>
                 </div>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-gray-900 truncate">
+                              {(user.firstName || '') + (user.lastName ? ' ' + user.lastName : '') || user.name}
+                            </p>
+                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                          </div>
+                        </div>
+                        {/* Wallet Balance */}
+                        <div className="mt-3 bg-white rounded-lg p-3 border border-purple-200">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-2">
+                              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-emerald-500 rounded-lg flex items-center justify-center">
+                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="text-xs text-gray-600 font-medium">Wallet Balance</p>
+                                <p className="text-lg font-bold text-gray-900">₹{user.wallet?.balance || 0}</p>
+                              </div>
+                            </div>
+                            <Link 
+                              to="/profile" 
+                              onClick={() => setIsProfileDropdownOpen(false)}
+                              className="text-xs text-purple-600 hover:text-purple-700 font-semibold"
+                            >
+                              View →
+                            </Link>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="py-2">
+                        <Link 
+                          to="/profile" 
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
+                        >
+                          <svg className="w-5 h-5 text-gray-600 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                          <span className="text-gray-700 group-hover:text-purple-600 font-medium">My Profile</span>
+                        </Link>
+                        <Link 
+                          to="/my-trips" 
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
+                        >
+                          <svg className="w-5 h-5 text-gray-600 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                          </svg>
+                          <span className="text-gray-700 group-hover:text-purple-600 font-medium">My Trips</span>
+                        </Link>
+                        <a 
+                          href="#contact" 
+                          onClick={() => setIsProfileDropdownOpen(false)}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
+                        >
+                          <svg className="w-5 h-5 text-gray-600 group-hover:text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+                          </svg>
+                          <span className="text-gray-700 group-hover:text-purple-600 font-medium">Support</span>
+                        </a>
+                      </div>
+                      <div className="border-t border-gray-100 py-2">
+                        <button
+                          onClick={() => {
+                            localStorage.removeItem('token');
+                            localStorage.removeItem('user');
+                            window.location.reload();
+                          }}
+                          className="flex items-center space-x-3 px-4 py-3 hover:bg-red-50 transition-colors group w-full text-left"
+                        >
+                          <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                          </svg>
+                          <span className="text-red-600 font-medium">Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                    )}
+                  </div>
+                </>
               ) : (
+                <>
+                  {/* Mobile Menu Toggle */}
+                  <button
+                    onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    className="md:hidden p-2 rounded-lg hover:bg-purple-50 transition-colors"
+                  >
+                    <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      {isMobileMenuOpen ? (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      ) : (
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      )}
+                    </svg>
+                  </button>
+
                 <Link 
                   to="/auth" 
-                  className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+                    className="hidden md:block group relative overflow-hidden bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-2.5 rounded-full font-semibold text-sm shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 active:scale-95"
                 >
-                  Login
+                    <span className="relative z-10">Login</span>
+                    <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
                 </Link>
+                </>
               )}
             </div>
           </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden mt-4 py-4 border-t border-purple-100"
+            >
+              <div className="space-y-2">
+                <Link 
+                  to="/explore-trips" 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block px-4 py-3 text-gray-700 hover:bg-purple-50 rounded-lg hover:text-purple-600 transition-colors font-semibold"
+                >
+                  Explore Trips
+                </Link>
+                {user ? (
+                  <>
+                    <Link 
+                      to="/my-trips" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-gray-700 hover:bg-purple-50 rounded-lg hover:text-purple-600 transition-colors font-semibold"
+                    >
+                      My Trips
+                    </Link>
+                    <Link 
+                      to="/profile" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-gray-700 hover:bg-purple-50 rounded-lg hover:text-purple-600 transition-colors font-semibold"
+                    >
+                      Profile
+                    </Link>
+                    <div className="border-t border-gray-200 my-2"></div>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('token');
+                        localStorage.removeItem('user');
+                        window.location.reload();
+                      }}
+                      className="block w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors font-semibold"
+                    >
+                      Logout
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <a 
+                      href="#destinations" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-gray-700 hover:bg-purple-50 rounded-lg hover:text-purple-600 transition-colors font-semibold"
+                    >
+                      Destinations
+                    </a>
+                    <a 
+                      href="#features" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-gray-700 hover:bg-purple-50 rounded-lg hover:text-purple-600 transition-colors font-semibold"
+                    >
+                      Features
+                    </a>
+                    <a 
+                      href="#faq" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-gray-700 hover:bg-purple-50 rounded-lg hover:text-purple-600 transition-colors font-semibold"
+                    >
+                      FAQ
+                    </a>
+                    <a 
+                      href="#contact" 
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block px-4 py-3 text-gray-700 hover:bg-purple-50 rounded-lg hover:text-purple-600 transition-colors font-semibold"
+                    >
+                      Contact
+                    </a>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
       </nav>
+
+      {/* Click outside to close dropdowns */}
+      {(isProfileDropdownOpen || isMobileMenuOpen) && (
+        <div
+          className="fixed inset-0 z-40"
+          onClick={() => {
+            setIsProfileDropdownOpen(false);
+            setIsMobileMenuOpen(false);
+          }}
+        ></div>
+      )}
 
       {/* Hero Section */}
       <section id="home" className="relative min-h-screen flex items-center justify-center overflow-hidden">
@@ -534,7 +853,7 @@ const LandingPage = () => {
                     </div>
                     <div>
                       <p className="text-white font-semibold">Call Us</p>
-                      <p className="text-purple-100">+91 98765 43210</p>
+                      <p className="text-purple-100">+91 8384826414</p>
                     </div>
                   </div>
                   
@@ -611,7 +930,7 @@ const LandingPage = () => {
                   onChange={handleInputChange}
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
-                  placeholder="+91 98765 43210"
+                  placeholder="+91 8384826414"
                 />
               </div>
               <div>
@@ -757,13 +1076,13 @@ Message: ${formData.message || 'Please contact me for more details.'}`
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/>
                   </svg>
-                  <span>+91 98765 43210</span>
+                  <span>+91 8384826414</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
                   </svg>
-                  <span>info@ghumakkars.com</span>
+                  <span>contact@ghumakkars.in</span>
                 </li>
                 <li className="flex items-center space-x-2">
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -781,8 +1100,19 @@ Message: ${formData.message || 'Please contact me for more details.'}`
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 Ghumakkars. All rights reserved. | Made with <svg className="w-4 h-4 inline mx-1 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> for travelers</p>
+          <div className="border-t border-gray-800 mt-12 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <p className="text-gray-400 text-center md:text-left">
+                &copy; 2024 Ghumakkars. All rights reserved. | Made with <svg className="w-4 h-4 inline mx-1 text-red-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg> for travelers
+              </p>
+              <div className="flex flex-wrap justify-center md:justify-end gap-4 text-gray-400">
+                <Link to="/about" className="hover:text-white transition-colors">About Us</Link>
+                <span className="text-gray-600">|</span>
+                <Link to="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                <span className="text-gray-600">|</span>
+                <Link to="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

@@ -71,36 +71,46 @@ export const AuthProvider = ({ children }) => {
     }
   }, [state.token]);
 
-  // Load user on app start
-  useEffect(() => {
-    const loadUser = async () => {
-      if (state.token) {
-        try {
-          const response = await axios.get('/api/user/profile');
-          dispatch({
-            type: 'AUTH_SUCCESS',
-            payload: {
-              user: response.data.user,
-              token: state.token
-            }
-          });
-        } catch (error) {
-          console.error('Failed to load user profile:', error);
-          // Only logout if it's an authentication error (401, 403)
-          if (error.response?.status === 401 || error.response?.status === 403) {
-            localStorage.removeItem('token');
-            dispatch({ type: 'LOGOUT' });
-          } else {
-            // For other errors, keep user logged in but show error
-            console.warn('Profile load failed, but keeping user logged in');
+  // Manual user loading - only when explicitly called
+  const loadUser = async () => {
+    if (state.token) {
+      try {
+        const response = await axios.get('/api/user/profile');
+        dispatch({
+          type: 'AUTH_SUCCESS',
+          payload: {
+            user: response.data.user,
+            token: state.token
           }
+        });
+        return { success: true, user: response.data.user };
+      } catch (error) {
+        console.error('Failed to load user profile:', error);
+        // Only logout if it's an authentication error (401, 403)
+        if (error.response?.status === 401 || error.response?.status === 403) {
+          localStorage.removeItem('token');
+          dispatch({ type: 'LOGOUT' });
+        } else {
+          // For other errors, keep user logged in but show error
+          console.warn('Profile load failed, but keeping user logged in');
         }
-      } else {
-        dispatch({ type: 'LOGOUT' });
+        return { success: false, error: error.message };
       }
-    };
+    } else {
+      dispatch({ type: 'LOGOUT' });
+      return { success: false, error: 'No token available' };
+    }
+  };
 
-    loadUser();
+  // Initialize loading state without automatic authentication
+  useEffect(() => {
+    dispatch({ type: 'AUTH_START' });
+    // Set loading to false after a brief delay to show the auth page
+    const timer = setTimeout(() => {
+      dispatch({ type: 'LOGOUT' }); // This sets loading to false
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // Register user
@@ -316,7 +326,8 @@ export const AuthProvider = ({ children }) => {
     resetPassword,
     logout,
     clearError,
-    refreshUser
+    refreshUser,
+    loadUser
   };
 
   return (

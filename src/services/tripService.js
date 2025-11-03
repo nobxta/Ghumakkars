@@ -138,6 +138,36 @@ export const tripService = {
     } catch (error) {
       throw new Error(error.response?.data?.message || 'Failed to fetch trip overview');
     }
+  },
+
+  // Like a trip
+  likeTrip: async (tripId) => {
+    try {
+      const response = await api.post('/api/user/like-trip', { tripId });
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to like trip');
+    }
+  },
+
+  // Unlike a trip
+  unlikeTrip: async (tripId) => {
+    try {
+      const response = await api.delete(`/api/user/unlike-trip/${tripId}`);
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to unlike trip');
+    }
+  },
+
+  // Get user's liked trips
+  getLikedTrips: async () => {
+    try {
+      const response = await api.get('/api/user/liked-trips');
+      return response.data;
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to fetch liked trips');
+    }
   }
 };
 

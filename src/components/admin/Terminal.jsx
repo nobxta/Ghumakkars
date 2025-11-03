@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Terminal as TerminalIcon, X, Filter, Download, Trash2, RefreshCw, Search, Zap } from 'lucide-react';
+import { Terminal as TerminalIcon, X, Filter, Download, Trash2, RefreshCw, Search, Zap, ChevronDown, ChevronUp, Copy, CopyCheck } from 'lucide-react';
 import io from 'socket.io-client';
 
 const Terminal = () => {
@@ -9,6 +9,9 @@ const Terminal = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
+  const [expandedLogs, setExpandedLogs] = useState(new Set());
+  const [copiedLogs, setCopiedLogs] = useState(new Set());
+  const [showAllMeta, setShowAllMeta] = useState(false);
   const socketRef = useRef(null);
   const logsEndRef = useRef(null);
   const logsContainerRef = useRef(null);
@@ -105,8 +108,8 @@ const Terminal = () => {
 
   const downloadLogs = () => {
     const logsText = filteredLogs.map(log => 
-      `[${new Date(log.timestamp).toISOString()}] [${log.level.toUpperCase()}] ${log.message} ${JSON.stringify(log.meta)}`
-    ).join('\n');
+      `[${new Date(log.timestamp).toISOString()}] [${log.level.toUpperCase()}] ${log.message}${log.meta ? ' ' + JSON.stringify(log.meta, null, 2) : ''}`
+    ).join('\n\n');
 
     const blob = new Blob([logsText], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -115,6 +118,83 @@ const Terminal = () => {
     a.download = `terminal-logs-${new Date().toISOString()}.txt`;
     a.click();
     URL.revokeObjectURL(url);
+  };
+
+  const toggleExpanded = (logId) => {
+    const newExpanded = new Set(expandedLogs);
+    if (newExpanded.has(logId)) {
+      newExpanded.delete(logId);
+    } else {
+      newExpanded.add(logId);
+    }
+    setExpandedLogs(newExpanded);
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  const copyLog = (log) => {
+    const logText = `[${new Date(log.timestamp).toISOString()}] [${log.level.toUpperCase()}] ${log.message}${log.meta ? '\n' + JSON.stringify(log.meta, null, 2) : ''}`;
+    copyToClipboard(logText);
+    
+    const newCopied = new Set(copiedLogs);
+    newCopied.add(log.id);
+    setCopiedLogs(newCopied);
+    
+    setTimeout(() => {
+      const updatedCopied = new Set(copiedLogs);
+      updatedCopied.delete(log.id);
+      setCopiedLogs(updatedCopied);
+    }, 2000);
+  };
+
+  const formatMeta = (meta) => {
+    if (!meta) return null;
+    
+    // Handle arrays
+    if (Array.isArray(meta)) {
+      if (meta.length === 0) return null;
+      try {
+        return JSON.stringify(meta, null, 2);
+      } catch (e) {
+        return meta.join(', ');
+      }
+    }
+    
+    // Handle objects
+    if (typeof meta === 'object') {
+      const keys = Object.keys(meta);
+      if (keys.length === 0) return null;
+      try {
+        return JSON.stringify(meta, null, 2);
+      } catch (e) {
+        return String(meta);
+      }
+    }
+    
+    // Handle primitives
+    return String(meta);
+  };
+
+  const toggleAllMeta = () => {
+    if (showAllMeta) {
+      // Collapse all
+      setExpandedLogs(new Set());
+      setShowAllMeta(false);
+    } else {
+      // Expand all logs with meta
+      const allIds = filteredLogs
+        .filter(log => {
+          if (!log.meta) return false;
+          if (Array.isArray(log.meta)) return log.meta.length > 0;
+          if (typeof log.meta === 'object') return Object.keys(log.meta).length > 0;
+          return true;
+        })
+        .map(log => log.id);
+      setExpandedLogs(new Set(allIds));
+      setShowAllMeta(true);
+    }
   };
 
   const filteredLogs = logs.filter(log => {
@@ -162,12 +242,12 @@ const Terminal = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 md:gap-0">
         <div>
-          <h1 className="text-3xl font-black text-slate-800">Live Terminal</h1>
-          <p className="text-slate-600 mt-1">Real-time server logs and monitoring</p>
+          <h1 className="text-2xl md:text-3xl font-black text-slate-800">Live Terminal</h1>
+          <p className="text-slate-600 mt-1 text-sm md:text-base">Real-time server logs and monitoring</p>
         </div>
         
         <div className="flex items-center space-x-2">
@@ -175,7 +255,7 @@ const Terminal = () => {
             isConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
           }`}>
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-            <span className="text-sm font-semibold">
+            <span className="text-xs md:text-sm font-semibold">
               {isConnected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
@@ -213,8 +293,8 @@ const Terminal = () => {
       {/* Terminal Window */}
       <div className="bg-slate-900 rounded-2xl border-2 border-slate-700 overflow-hidden shadow-2xl">
         {/* Terminal Header */}
-        <div className="bg-slate-800 px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <div className="bg-slate-800 px-3 md:px-4 py-3 border-b border-slate-700 flex flex-col md:flex-row items-start md:items-center justify-between gap-2 md:gap-0">
+          <div className="flex items-center space-x-2 md:space-x-3">
             <div className="flex space-x-2">
               <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
@@ -222,20 +302,20 @@ const Terminal = () => {
             </div>
             <div className="flex items-center space-x-2">
               <TerminalIcon className="w-4 h-4 text-green-400" />
-              <span className="text-white font-mono text-sm">admin@ghumakkars:~/logs</span>
+              <span className="text-white font-mono text-xs md:text-sm truncate">admin@ghumakkars:~/logs</span>
             </div>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 md:space-x-2 flex-wrap md:flex-nowrap">
             {/* Search */}
-            <div className="relative">
+            <div className="relative w-full md:w-48">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search logs..."
-                className="bg-slate-700 text-white pl-9 pr-3 py-1.5 rounded-lg text-sm border border-slate-600 focus:border-blue-500 focus:outline-none w-48"
+                className="bg-slate-700 text-white pl-9 pr-3 py-1.5 rounded-lg text-sm border border-slate-600 focus:border-blue-500 focus:outline-none w-full"
               />
             </div>
 
@@ -274,6 +354,19 @@ const Terminal = () => {
               <RefreshCw className="w-4 h-4" />
             </button>
 
+            {/* Expand/Collapse All Meta */}
+            <button
+              onClick={toggleAllMeta}
+              className={`p-2 rounded-lg transition-colors ${
+                showAllMeta
+                  ? 'bg-purple-600 text-white hover:bg-purple-700'
+                  : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+              }`}
+              title={showAllMeta ? "Collapse all meta" : "Expand all meta"}
+            >
+              {showAllMeta ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
             {/* Download */}
             <button
               onClick={downloadLogs}
@@ -297,7 +390,7 @@ const Terminal = () => {
         {/* Logs Container */}
         <div 
           ref={logsContainerRef}
-          className="h-[calc(100vh-400px)] overflow-y-auto p-4 space-y-1 font-mono text-sm custom-scrollbar"
+          className="h-[400px] md:h-[500px] lg:h-[600px] overflow-y-auto p-4 space-y-1 font-mono text-sm custom-scrollbar"
         >
           <AnimatePresence>
             {filteredLogs.length === 0 ? (
@@ -311,6 +404,14 @@ const Terminal = () => {
             ) : (
               filteredLogs.map((log, index) => {
                 const config = levelConfig[log.level] || levelConfig.info;
+                const isExpanded = expandedLogs.has(log.id);
+                const isCopied = copiedLogs.has(log.id);
+                const hasMeta = log.meta && (
+                  (typeof log.meta === 'object' && Object.keys(log.meta).length > 0) ||
+                  (Array.isArray(log.meta) && log.meta.length > 0)
+                );
+                const metaFormatted = hasMeta ? formatMeta(log.meta) : null;
+                
                 return (
                   <motion.div
                     key={log.id}
@@ -318,20 +419,60 @@ const Terminal = () => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.2 }}
-                    className={`flex space-x-2 items-start p-2 rounded-lg border ${config.bg} ${config.border} hover:bg-slate-800/50 transition-colors`}
+                    className={`rounded-lg border ${config.bg} ${config.border} hover:bg-slate-800/50 transition-colors overflow-hidden`}
                   >
-                    <span className="text-slate-500 text-xs whitespace-nowrap">
-                      {new Date(log.timestamp).toLocaleTimeString()}
-                    </span>
-                    <span className={`${config.color} font-bold uppercase text-xs whitespace-nowrap flex items-center space-x-1`}>
-                      <span>{config.icon}</span>
-                      <span>[{log.level}]</span>
-                    </span>
-                    <span className="text-slate-300 flex-1">{log.message}</span>
-                    {log.meta && Object.keys(log.meta).length > 0 && (
-                      <span className="text-slate-500 text-xs">
-                        {JSON.stringify(log.meta)}
-                      </span>
+                    <div className="flex flex-col md:flex-row md:space-x-2 items-start p-2 gap-2 md:gap-0">
+                      <div className="flex space-x-2 w-full md:w-auto">
+                        <span className="text-slate-500 text-xs whitespace-nowrap min-w-[60px] md:min-w-[80px]">
+                          {new Date(log.timestamp).toLocaleTimeString()}
+                        </span>
+                        <span className={`${config.color} font-bold uppercase text-xs whitespace-nowrap flex items-center space-x-1 md:min-w-[90px]`}>
+                          <span>{config.icon}</span>
+                          <span>[{log.level}]</span>
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <span className="text-slate-300 break-words block">{log.message}</span>
+                      </div>
+                      
+                      <div className="flex items-center space-x-1 flex-shrink-0">
+                        {hasMeta && (
+                          <button
+                            onClick={() => toggleExpanded(log.id)}
+                            className="p-1 hover:bg-slate-700 rounded transition-colors"
+                            title={isExpanded ? "Collapse" : "Expand meta"}
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-slate-400" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-slate-400" />
+                            )}
+                          </button>
+                        )}
+                        
+                        <button
+                          onClick={() => copyLog(log)}
+                          className="p-1 hover:bg-slate-700 rounded transition-colors"
+                          title={isCopied ? "Copied!" : "Copy log"}
+                        >
+                          {isCopied ? (
+                            <CopyCheck className="w-4 h-4 text-green-400" />
+                          ) : (
+                            <Copy className="w-4 h-4 text-slate-400" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {isExpanded && hasMeta && metaFormatted && (
+                      <div className="px-2 pb-2">
+                        <div className="bg-slate-800 rounded p-3 border border-slate-600">
+                          <div className="text-xs text-slate-400 mb-1 font-semibold uppercase">Meta Data:</div>
+                          <pre className="text-slate-300 text-xs whitespace-pre-wrap break-words font-mono overflow-x-auto">
+                            {metaFormatted}
+                          </pre>
+                        </div>
+                      </div>
                     )}
                   </motion.div>
                 );

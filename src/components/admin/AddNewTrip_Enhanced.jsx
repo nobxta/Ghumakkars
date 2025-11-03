@@ -21,24 +21,22 @@ import {
   AlertCircle,
   X,
   Plus,
-  Minus
+  Minus,
+  Send,
+  MessageCircle,
+  Camera,
+  Route,
+  Star,
+  Heart,
+  Share2
 } from 'lucide-react';
 import tripService from '../../services/tripService';
 
 const AddNewTrip = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [currentTab, setCurrentTab] = useState('basic');
-  const [publishOption, setPublishOption] = useState('draft'); // 'draft', 'now', 'scheduled'
-  const [enableEarlyBird, setEnableEarlyBird] = useState(false);
-
-  // Duration states
-  const [nightsType, setNightsType] = useState('select'); // 'select' or 'custom'
-  const [daysType, setDaysType] = useState('select'); // 'select' or 'custom'
-  const [selectedNights, setSelectedNights] = useState('');
-  const [selectedDays, setSelectedDays] = useState('');
-  const [customNights, setCustomNights] = useState('');
-  const [customDays, setCustomDays] = useState('');
+  const [currentStep, setCurrentStep] = useState(1);
+  const [publishOption, setPublishOption] = useState('draft');
 
   const [tripData, setTripData] = useState({
     // Basic Information
@@ -54,10 +52,10 @@ const AddNewTrip = () => {
     earlyBirdPrice: '',
     earlyBirdValidUntil: '',
     
-    // Duration (will be calculated from nights/days)
+    // Duration
     nights: '',
     days: '',
-    duration: '', // Will be "3 Nights 4 Days"
+    duration: '', // Will be auto-generated
     
     // Dates & Location
     departureDate: '',
@@ -95,7 +93,7 @@ const AddNewTrip = () => {
       }
     ],
     
-    // Important Things to Note (Auto-populated with defaults)
+    // Important Things to Note
     importantNotes: [
       'Don\'t carry too much cash or costly items',
       'Avoid heavy luggage as it can interrupt your travel',
@@ -131,8 +129,21 @@ const AddNewTrip = () => {
     publishNow: false,
     schedulePublishDate: '',
     schedulePublishTime: '',
-    isPublished: false
+    isPublished: false,
+    
+    // WhatsApp Group Link
+    whatsappGroupLink: ''
   });
+
+  const steps = [
+    { id: 1, title: 'Basic Info', icon: FileText, description: 'Trip title, description, and basic details' },
+    { id: 2, title: 'Duration & Dates', icon: Calendar, description: 'Trip duration, dates, and locations' },
+    { id: 3, title: 'Pricing', icon: DollarSign, description: 'Pricing, early bird offers, and seat lock' },
+    { id: 4, title: 'Images', icon: Camera, description: 'Cover image and gallery' },
+    { id: 5, title: 'Itinerary', icon: Route, description: 'Day-by-day trip itinerary' },
+    { id: 6, title: 'Details', icon: Settings, description: 'Inclusions, exclusions, and requirements' },
+    { id: 7, title: 'Publish', icon: Send, description: 'Review and publish your trip' }
+  ];
 
   // Auto-generate URL slug from title
   useEffect(() => {
@@ -145,16 +156,19 @@ const AddNewTrip = () => {
     }
   }, [tripData.title]);
 
-  // Update duration when nights/days change
+  // Auto-generate duration from nights and days
   useEffect(() => {
-    const nights = nightsType === 'custom' ? customNights : selectedNights;
-    const days = daysType === 'custom' ? customDays : selectedDays;
-    
-    if (nights && days) {
-      const duration = `${nights} ${nights === '1' ? 'Night' : 'Nights'} ${days} ${days === '1' ? 'Day' : 'Days'}`;
-      setTripData(prev => ({ ...prev, nights, days, duration }));
+    if (tripData.nights !== '' && tripData.days !== '') {
+      const nights = parseInt(tripData.nights);
+      const days = parseInt(tripData.days);
+      if (nights >= 0 && days >= 1) {
+        const nightsText = nights === 1 ? 'Night' : 'Nights';
+        const daysText = days === 1 ? 'Day' : 'Days';
+        const duration = `${nights} ${nightsText} ${days} ${daysText}`;
+        setTripData(prev => ({ ...prev, duration }));
+      }
     }
-  }, [nightsType, daysType, selectedNights, selectedDays, customNights, customDays]);
+  }, [tripData.nights, tripData.days]);
 
   const handleInputChange = (field, value) => {
     setTripData(prev => ({ ...prev, [field]: value }));
@@ -202,30 +216,6 @@ const AddNewTrip = () => {
     }));
   };
 
-  const addItineraryArrayItem = (dayIndex, field) => {
-    setTripData(prev => ({
-      ...prev,
-      itinerary: prev.itinerary.map((day, i) => 
-        i === dayIndex ? {
-          ...day,
-          [field]: [...day[field], '']
-        } : day
-      )
-    }));
-  };
-
-  const removeItineraryArrayItem = (dayIndex, field, itemIndex) => {
-    setTripData(prev => ({
-      ...prev,
-      itinerary: prev.itinerary.map((day, i) => 
-        i === dayIndex ? {
-          ...day,
-          [field]: day[field].filter((_, j) => j !== itemIndex)
-        } : day
-      )
-    }));
-  };
-
   const addItineraryDay = () => {
     const newDay = {
       day: tripData.itinerary.length + 1,
@@ -245,45 +235,56 @@ const AddNewTrip = () => {
     }));
   };
 
-  const removeItineraryDay = (index) => {
-    if (tripData.itinerary.length > 1) {
-      setTripData(prev => ({
-        ...prev,
-        itinerary: prev.itinerary
-          .filter((_, i) => i !== index)
-          .map((day, i) => ({ ...day, day: i + 1 }))
-      }));
-    }
+  const removeItineraryDay = (dayIndex) => {
+    setTripData(prev => ({
+      ...prev,
+      itinerary: prev.itinerary.filter((_, i) => i !== dayIndex).map((day, i) => ({
+        ...day,
+        day: i + 1
+      }))
+    }));
   };
 
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
-
-      // Prepare data based on publish option
-      const submitData = {
+      
+      // Clean and validate data
+      const cleanedData = {
         ...tripData,
-        isEarlyBird: enableEarlyBird,
+        price: parseFloat(tripData.price) || 0,
+        earlyBirdPrice: parseFloat(tripData.earlyBirdPrice) || 0,
+        maxParticipants: parseInt(tripData.maxParticipants) || 1,
+        seatLockAmount: parseFloat(tripData.seatLockAmount) || 0,
+        nights: parseInt(tripData.nights) || 0,
+        days: parseInt(tripData.days) || 1,
+        title: tripData.title.trim(),
+        summary: tripData.summary.trim(),
+        description: tripData.description.trim(),
+        coverImage: tripData.coverImage.trim(),
+        startLocation: tripData.startLocation.trim(),
+        endLocation: tripData.endLocation.trim(),
+        transportMode: tripData.transportMode.trim(),
+        whatsappGroupLink: tripData.whatsappGroupLink.trim()
       };
 
+      // Handle publish logic
       if (publishOption === 'now') {
-        submitData.isPublished = true;
+        cleanedData.publishNow = true;
+        cleanedData.isPublished = true;
       } else if (publishOption === 'scheduled') {
-        submitData.isPublished = false;
-        submitData.publishNow = false;
-        submitData.schedulePublishDate = tripData.schedulePublishDate;
-        submitData.schedulePublishTime = tripData.schedulePublishTime;
+        cleanedData.schedulePublishDate = tripData.schedulePublishDate;
+        cleanedData.schedulePublishTime = tripData.schedulePublishTime;
+        cleanedData.isPublished = false;
       } else {
-        // draft
-        submitData.isPublished = false;
+        cleanedData.isPublished = false;
       }
 
-      const response = await tripService.createTrip(submitData);
-
-      if (response.success) {
-        alert(`Trip ${publishOption === 'draft' ? 'saved as draft' : publishOption === 'now' ? 'published' : 'scheduled'} successfully!`);
-        navigate('/admin/trips');
-      }
+      console.log('Sending trip data:', cleanedData);
+      
+      await tripService.createTrip(cleanedData);
+      alert('Trip created successfully!');
+      navigate('/admin/trips');
     } catch (error) {
       console.error('Error creating trip:', error);
       alert('Failed to create trip: ' + error.message);
@@ -292,188 +293,318 @@ const AddNewTrip = () => {
     }
   };
 
-  const tabs = [
-    { id: 'basic', label: 'Basic Info', icon: FileText },
-    { id: 'images', label: 'Images', icon: ImageIcon },
-    { id: 'duration', label: 'Duration', icon: Clock },
-    { id: 'pricing', label: 'Pricing', icon: DollarSign },
-    { id: 'itinerary', label: 'Itinerary', icon: MapPin },
-    { id: 'details', label: 'Details', icon: Settings },
-    { id: 'requirements', label: 'Requirements', icon: AlertCircle },
-    { id: 'publish', label: 'Publish', icon: Globe }
-  ];
+  const nextStep = () => {
+    if (currentStep < steps.length) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-sm border border-slate-200/50 p-6"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => navigate('/admin/trips')}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5 text-slate-600" />
-              </button>
-              <div>
-                <h1 className="text-3xl font-black text-slate-800">Create New Trip</h1>
-                <p className="text-slate-600 mt-1">Fill in the details to create your amazing trip</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+  const prevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
 
-        {/* Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-sm border border-slate-200/50 p-2"
-        >
-          <div className="flex space-x-2 overflow-x-auto">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setCurrentTab(tab.id)}
-                  className={`flex items-center space-x-2 px-4 py-3 rounded-xl font-semibold transition-all whitespace-nowrap ${
-                    currentTab === tab.id
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </motion.div>
-
-        {/* Content */}
-        <AnimatePresence mode="wait">
+  const renderStepContent = () => {
+    switch (currentStep) {
+      case 1:
+        return (
           <motion.div
-            key={currentTab}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-sm border border-slate-200/50 p-6 md:p-8"
+            className="space-y-8"
           >
-            {/* Basic Info Tab */}
-            {currentTab === 'basic' && (
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Basic Information</h2>
+              <p className="text-gray-600">Let's start with the essential details about your trip</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Left Column */}
               <div className="space-y-6">
-                <h2 className="text-2xl font-black text-slate-800 mb-6">Basic Information</h2>
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <FileText className="w-5 h-5 mr-2 text-blue-600" />
+                    Trip Details
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Trip Title *
+                      </label>
+                      <input
+                        type="text"
+                        value={tripData.title}
+                        onChange={(e) => handleInputChange('title', e.target.value)}
+                        placeholder="e.g., Amazing Manali Adventure"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
 
-                {/* Title */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Trip Title *
-                  </label>
-                  <input
-                    type="text"
-                    value={tripData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="e.g., Amazing Himalayan Adventure"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        URL Slug
+                      </label>
+                      <input
+                        type="text"
+                        value={tripData.urlSlug}
+                        onChange={(e) => handleInputChange('urlSlug', e.target.value)}
+                        placeholder="amazing-manali-adventure"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        This will be your trip's URL. Use lowercase letters, numbers, and hyphens only.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Short Summary *
+                      </label>
+                      <textarea
+                        value={tripData.summary}
+                        onChange={(e) => handleInputChange('summary', e.target.value)}
+                        placeholder="A brief, compelling summary of the trip (2-3 sentences)"
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Full Description *
+                      </label>
+                      <textarea
+                        value={tripData.description}
+                        onChange={(e) => handleInputChange('description', e.target.value)}
+                        placeholder="Detailed description of the trip, what makes it special, what to expect..."
+                        rows={6}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                      />
+                    </div>
+                  </div>
                 </div>
+              </div>
 
-                {/* URL Slug */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    URL Slug * <span className="text-xs text-slate-500">(SEO friendly URL)</span>
-                  </label>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-slate-500">ghumakkars.com/trip/</span>
+              {/* Right Column */}
+              <div className="space-y-6">
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <Tag className="w-5 h-5 mr-2 text-green-600" />
+                    Trip Classification
+                  </h3>
+                  
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Category *
+                        </label>
+                        <select
+                          value={tripData.category}
+                          onChange={(e) => handleInputChange('category', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="Adventure">Adventure</option>
+                          <option value="Spiritual">Spiritual</option>
+                          <option value="Cultural">Cultural</option>
+                          <option value="Nature">Nature</option>
+                          <option value="Photography">Photography</option>
+                          <option value="Wellness">Wellness</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Difficulty Level *
+                        </label>
+                        <select
+                          value={tripData.difficulty}
+                          onChange={(e) => handleInputChange('difficulty', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="Easy">Easy</option>
+                          <option value="Moderate">Moderate</option>
+                          <option value="Challenging">Challenging</option>
+                          <option value="Extreme">Extreme</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Trip Type
+                        </label>
+                        <select
+                          value={tripData.tripType}
+                          onChange={(e) => handleInputChange('tripType', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="Group">Group</option>
+                          <option value="Private">Private</option>
+                          <option value="Custom">Custom</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Age Group
+                        </label>
+                        <select
+                          value={tripData.ageGroup}
+                          onChange={(e) => handleInputChange('ageGroup', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        >
+                          <option value="All Ages">All Ages</option>
+                          <option value="18+">18+</option>
+                          <option value="21+">21+</option>
+                          <option value="Family">Family</option>
+                          <option value="Senior">Senior</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Physical Fitness Required
+                      </label>
+                      <select
+                        value={tripData.physicalFitness}
+                        onChange={(e) => handleInputChange('physicalFitness', e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      >
+                        <option value="Low">Low - Anyone can participate</option>
+                        <option value="Moderate">Moderate - Basic fitness required</option>
+                        <option value="High">High - Good fitness required</option>
+                        <option value="Extreme">Extreme - Excellent fitness required</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case 2:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Duration & Dates</h2>
+              <p className="text-gray-600">Set the trip duration, dates, and locations</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Duration */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Clock className="w-5 h-5 mr-2 text-purple-600" />
+                  Trip Duration
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nights *
+                      </label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="30"
+                        value={tripData.nights}
+                        onChange={(e) => handleInputChange('nights', e.target.value)}
+                        placeholder="2"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Days *
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        value={tripData.days}
+                        onChange={(e) => handleInputChange('days', e.target.value)}
+                        placeholder="4"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+                  
+                  {tripData.duration && (
+                    <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                      <p className="text-sm text-purple-700 mb-1">Generated Duration:</p>
+                      <p className="text-xl font-bold text-purple-900">{tripData.duration}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Calendar className="w-5 h-5 mr-2 text-blue-600" />
+                  Trip Dates
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Departure Date *
+                    </label>
                     <input
-                      type="text"
-                      value={tripData.urlSlug}
-                      onChange={(e) => handleInputChange('urlSlug', e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                      placeholder="amazing-himalayan-adventure"
-                      className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                      type="date"
+                      value={tripData.departureDate}
+                      onChange={(e) => handleInputChange('departureDate', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     />
                   </div>
-                  <p className="text-xs text-slate-500 mt-1">
-                    This will be your trip's URL. Use lowercase letters, numbers, and hyphens only.
-                  </p>
-                </div>
-
-                {/* Summary */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Short Summary *
-                  </label>
-                  <textarea
-                    value={tripData.summary}
-                    onChange={(e) => handleInputChange('summary', e.target.value)}
-                    placeholder="A brief, compelling summary of the trip (2-3 sentences)"
-                    rows={3}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                </div>
-
-                {/* Description */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Full Description *
-                  </label>
-                  <textarea
-                    value={tripData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="Detailed description of the trip, what makes it special, what to expect..."
-                    rows={6}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                </div>
-
-                {/* Category & Difficulty */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Category *
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Return Date *
                     </label>
-                    <select
-                      value={tripData.category}
-                      onChange={(e) => handleInputChange('category', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                    >
-                      <option value="Adventure">Adventure</option>
-                      <option value="Spiritual">Spiritual</option>
-                      <option value="Cultural">Cultural</option>
-                      <option value="Nature">Nature</option>
-                      <option value="Photography">Photography</option>
-                      <option value="Wellness">Wellness</option>
-                    </select>
+                    <input
+                      type="date"
+                      value={tripData.returnDate}
+                      onChange={(e) => handleInputChange('returnDate', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Difficulty Level *
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Booking Cutoff Date
                     </label>
-                    <select
-                      value={tripData.difficulty}
-                      onChange={(e) => handleInputChange('difficulty', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                    >
-                      <option value="Easy">Easy</option>
-                      <option value="Moderate">Moderate</option>
-                      <option value="Challenging">Challenging</option>
-                      <option value="Difficult">Difficult</option>
-                    </select>
+                    <input
+                      type="date"
+                      value={tripData.bookingCutoffDate}
+                      onChange={(e) => handleInputChange('bookingCutoffDate', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
                   </div>
                 </div>
+              </div>
 
-                {/* Locations */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Locations */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <MapPin className="w-5 h-5 mr-2 text-green-600" />
+                  Locations
+                </h3>
+                
+                <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       Start Location *
                     </label>
                     <input
@@ -481,12 +612,11 @@ const AddNewTrip = () => {
                       value={tripData.startLocation}
                       onChange={(e) => handleInputChange('startLocation', e.target.value)}
                       placeholder="e.g., Delhi"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
                       End Location *
                     </label>
                     <input
@@ -494,39 +624,214 @@ const AddNewTrip = () => {
                       value={tripData.endLocation}
                       onChange={(e) => handleInputChange('endLocation', e.target.value)}
                       placeholder="e.g., Manali"
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Transport Mode *
+                    </label>
+                    <select
+                      value={tripData.transportMode}
+                      onChange={(e) => handleInputChange('transportMode', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    >
+                      <option value="Bus">Bus</option>
+                      <option value="Train">Train</option>
+                      <option value="Flight">Flight</option>
+                      <option value="Car">Car</option>
+                      <option value="Tempo Traveler">Tempo Traveler</option>
+                      <option value="Bike">Bike</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      WhatsApp Group Link
+                    </label>
+                    <input
+                      type="url"
+                      value={tripData.whatsappGroupLink}
+                      onChange={(e) => handleInputChange('whatsappGroupLink', e.target.value)}
+                      placeholder="https://chat.whatsapp.com/..."
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Optional: WhatsApp group link for travelers to connect. Will be shared only after payment confirmation.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Availability */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-orange-600" />
+                  Availability
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Max Participants *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={tripData.maxParticipants}
+                      onChange={(e) => handleInputChange('maxParticipants', e.target.value)}
+                      placeholder="15"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Seat Lock Amount (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={tripData.seatLockAmount}
+                      onChange={(e) => handleInputChange('seatLockAmount', e.target.value)}
+                      placeholder="3000"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Non-refundable deposit amount for seat locking
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        );
+
+      case 3:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Pricing Details</h2>
+              <p className="text-gray-600">Set up pricing, early bird offers, and payment options</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Regular Pricing */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <DollarSign className="w-5 h-5 mr-2 text-green-600" />
+                  Regular Pricing
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Price per Person (₹) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={tripData.price}
+                      onChange={(e) => handleInputChange('price', e.target.value)}
+                      placeholder="15000"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all text-lg font-semibold"
                     />
                   </div>
                 </div>
               </div>
-            )}
 
-            {/* Images Tab */}
-            {currentTab === 'images' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-black text-slate-800 mb-6">Trip Images</h2>
+              {/* Early Bird Pricing */}
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 shadow-sm border border-green-200">
+                <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                  <Zap className="w-5 h-5 mr-2 text-green-600" />
+                  Early Bird Offer
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-green-700 mb-2">
+                      Early Bird Price (₹)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={tripData.earlyBirdPrice}
+                      onChange={(e) => handleInputChange('earlyBirdPrice', e.target.value)}
+                      placeholder="12000"
+                      className="w-full px-4 py-3 border border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-green-700 mb-2">
+                      Valid Until
+                    </label>
+                    <input
+                      type="date"
+                      value={tripData.earlyBirdValidUntil}
+                      onChange={(e) => handleInputChange('earlyBirdValidUntil', e.target.value)}
+                      className="w-full px-4 py-3 border border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  
+                  {tripData.earlyBirdPrice && tripData.price && (
+                    <div className="bg-white rounded-xl border-2 border-green-300 p-4">
+                      <p className="text-sm text-green-700 mb-1">Discount:</p>
+                      <p className="text-2xl font-bold text-green-600">
+                        ₹{tripData.price - tripData.earlyBirdPrice} OFF ({Math.round(((tripData.price - tripData.earlyBirdPrice) / tripData.price) * 100)}%)
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        );
 
-                {/* Cover Image */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Cover Image URL *
-                  </label>
-                  <input
-                    type="url"
-                    value={tripData.coverImage}
-                    onChange={(e) => handleInputChange('coverImage', e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                  <p className="text-xs text-slate-500 mt-1">
-                    Main trip image displayed on cards and detail page
-                  </p>
+      case 4:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Trip Images</h2>
+              <p className="text-gray-600">Add cover image and gallery images for your trip</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Cover Image */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <ImageIcon className="w-5 h-5 mr-2 text-blue-600" />
+                  Cover Image
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Cover Image URL *
+                    </label>
+                    <input
+                      type="url"
+                      value={tripData.coverImage}
+                      onChange={(e) => handleInputChange('coverImage', e.target.value)}
+                      placeholder="https://example.com/image.jpg"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    />
+                  </div>
+                  
                   {tripData.coverImage && (
                     <div className="mt-4">
                       <img
                         src={tripData.coverImage}
                         alt="Cover preview"
-                        className="w-full h-64 object-cover rounded-xl border-2 border-slate-200"
+                        className="w-full h-64 object-cover rounded-xl border-2 border-gray-200"
                         onError={(e) => {
                           e.target.style.display = 'none';
                         }}
@@ -534,25 +839,29 @@ const AddNewTrip = () => {
                     </div>
                   )}
                 </div>
+              </div>
 
-                {/* Gallery Images */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Gallery Images (URLs)
-                  </label>
+              {/* Gallery Images */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Camera className="w-5 h-5 mr-2 text-purple-600" />
+                  Gallery Images
+                </h3>
+                
+                <div className="space-y-4">
                   {tripData.galleryImages.map((image, index) => (
-                    <div key={index} className="flex items-center space-x-2 mb-2">
+                    <div key={index} className="flex items-center space-x-2">
                       <input
                         type="url"
                         value={image}
                         onChange={(e) => handleArrayChange('galleryImages', index, e.target.value)}
                         placeholder="https://example.com/gallery-image.jpg"
-                        className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                        className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                       />
                       {tripData.galleryImages.length > 1 && (
                         <button
                           onClick={() => removeArrayItem('galleryImages', index)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
                           <Minus className="w-5 h-5" />
                         </button>
@@ -561,978 +870,550 @@ const AddNewTrip = () => {
                   ))}
                   <button
                     onClick={() => addArrayItem('galleryImages')}
-                    className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
+                    className="flex items-center space-x-2 px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-colors"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add Gallery Image</span>
                   </button>
                 </div>
               </div>
-            )}
+            </div>
+          </motion.div>
+        );
 
-            {/* Duration Tab */}
-            {currentTab === 'duration' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-black text-slate-800 mb-6">Trip Duration & Dates</h2>
+      case 5:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Day-by-Day Itinerary</h2>
+              <p className="text-gray-600">Create a detailed itinerary for your trip</p>
+            </div>
 
-                {/* Duration Selection */}
-                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-                  <h3 className="text-lg font-bold text-blue-900 mb-4">Trip Duration</h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Nights */}
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-3">
-                        Number of Nights *
-                      </label>
-                      <div className="space-y-3">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="nights-select"
-                            checked={nightsType === 'select'}
-                            onChange={() => setNightsType('select')}
-                            className="w-4 h-4"
-                          />
-                          <label htmlFor="nights-select" className="font-medium">Select from list</label>
-                        </div>
-                        
-                        {nightsType === 'select' && (
-                          <select
-                            value={selectedNights}
-                            onChange={(e) => setSelectedNights(e.target.value)}
-                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                          >
-                            <option value="">Select nights...</option>
-                            {[...Array(10)].map((_, i) => (
-                              <option key={i} value={i + 1}>{i + 1} {i === 0 ? 'Night' : 'Nights'}</option>
-                            ))}
-                          </select>
-                        )}
-
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="nights-custom"
-                            checked={nightsType === 'custom'}
-                            onChange={() => setNightsType('custom')}
-                            className="w-4 h-4"
-                          />
-                          <label htmlFor="nights-custom" className="font-medium">Custom</label>
-                        </div>
-                        
-                        {nightsType === 'custom' && (
-                          <input
-                            type="number"
-                            min="1"
-                            value={customNights}
-                            onChange={(e) => setCustomNights(e.target.value)}
-                            placeholder="Enter number of nights"
-                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                          />
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Days */}
-                    <div>
-                      <label className="block text-sm font-bold text-slate-700 mb-3">
-                        Number of Days *
-                      </label>
-                      <div className="space-y-3">
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="days-select"
-                            checked={daysType === 'select'}
-                            onChange={() => setDaysType('select')}
-                            className="w-4 h-4"
-                          />
-                          <label htmlFor="days-select" className="font-medium">Select from list</label>
-                        </div>
-                        
-                        {daysType === 'select' && (
-                          <select
-                            value={selectedDays}
-                            onChange={(e) => setSelectedDays(e.target.value)}
-                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                          >
-                            <option value="">Select days...</option>
-                            {[...Array(10)].map((_, i) => (
-                              <option key={i} value={i + 1}>{i + 1} {i === 0 ? 'Day' : 'Days'}</option>
-                            ))}
-                          </select>
-                        )}
-
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="radio"
-                            id="days-custom"
-                            checked={daysType === 'custom'}
-                            onChange={() => setDaysType('custom')}
-                            className="w-4 h-4"
-                          />
-                          <label htmlFor="days-custom" className="font-medium">Custom</label>
-                        </div>
-                        
-                        {daysType === 'custom' && (
-                          <input
-                            type="number"
-                            min="1"
-                            value={customDays}
-                            onChange={(e) => setCustomDays(e.target.value)}
-                            placeholder="Enter number of days"
-                            className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Duration Preview */}
-                  {tripData.duration && (
-                    <div className="mt-6 p-4 bg-white rounded-xl border-2 border-blue-300">
-                      <p className="text-sm text-slate-600 mb-1">Duration Preview:</p>
-                      <p className="text-2xl font-black text-blue-600">{tripData.duration}</p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Trip Dates */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Departure Date *
-                    </label>
-                    <input
-                      type="date"
-                      value={tripData.departureDate}
-                      onChange={(e) => handleInputChange('departureDate', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Return Date *
-                    </label>
-                    <input
-                      type="date"
-                      value={tripData.returnDate}
-                      onChange={(e) => handleInputChange('returnDate', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                    />
-                  </div>
-                </div>
-
-                {/* Booking Cutoff Date */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Booking Cut-off Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={tripData.bookingCutoffDate}
-                    onChange={(e) => handleInputChange('bookingCutoffDate', e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                  <p className="text-sm text-slate-500 mt-1">
-                    Last day customers can book this trip. Usually 2-7 days before departure.
-                  </p>
-                </div>
-
-                {/* Max Participants */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Maximum Participants *
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    value={tripData.maxParticipants}
-                    onChange={(e) => handleInputChange('maxParticipants', e.target.value)}
-                    placeholder="e.g., 20"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                </div>
-
-                {/* Transport Mode & Trip Details */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Transport Mode *
-                    </label>
-                    <select
-                      value={tripData.transportMode}
-                      onChange={(e) => handleInputChange('transportMode', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                    >
-                      <option value="Bus">Bus</option>
-                      <option value="Tempo Traveler">Tempo Traveler</option>
-                      <option value="Train">Train</option>
-                      <option value="Flight">Flight</option>
-                      <option value="Car">Car</option>
-                      <option value="Bike">Bike</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Trip Type *
-                    </label>
-                    <select
-                      value={tripData.tripType}
-                      onChange={(e) => handleInputChange('tripType', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                    >
-                      <option value="Group">Group</option>
-                      <option value="Private">Private</option>
-                      <option value="Custom">Custom</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Age Group *
-                    </label>
-                    <select
-                      value={tripData.ageGroup}
-                      onChange={(e) => handleInputChange('ageGroup', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                    >
-                      <option value="All Ages">All Ages</option>
-                      <option value="18+">18+</option>
-                      <option value="21+">21+</option>
-                      <option value="Family">Family</option>
-                      <option value="Senior">Senior</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Physical Fitness */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Physical Fitness Required *
-                  </label>
-                  <select
-                    value={tripData.physicalFitness}
-                    onChange={(e) => handleInputChange('physicalFitness', e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  >
-                    <option value="Low">Low - Anyone can participate</option>
-                    <option value="Moderate">Moderate - Basic fitness required</option>
-                    <option value="High">High - Good fitness required</option>
-                    <option value="Extreme">Extreme - Excellent fitness required</option>
-                  </select>
-                </div>
-              </div>
-            )}
-
-            {/* Pricing Tab */}
-            {currentTab === 'pricing' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-black text-slate-800 mb-6">Pricing Details</h2>
-
-                {/* Regular Price */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Price per Person (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={tripData.price}
-                    onChange={(e) => handleInputChange('price', e.target.value)}
-                    placeholder="e.g., 15000"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium text-lg"
-                  />
-                </div>
-
-                {/* Early Bird Toggle */}
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-6">
+            <div className="space-y-6">
+              {tripData.itinerary.map((day, dayIndex) => (
+                <motion.div
+                  key={dayIndex}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6"
+                >
                   <div className="flex items-center justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold text-green-900">Early Bird Discount</h3>
-                      <p className="text-sm text-green-700">Offer a special price for early bookings</p>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={enableEarlyBird}
-                        onChange={(e) => setEnableEarlyBird(e.target.checked)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-600"></div>
-                    </label>
+                    <h3 className="text-xl font-bold text-blue-900">Day {day.day}</h3>
+                    {tripData.itinerary.length > 1 && (
+                      <button
+                        onClick={() => removeItineraryDay(dayIndex)}
+                        className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
 
-                  <AnimatePresence>
-                    {enableEarlyBird && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="space-y-4"
-                      >
-                        <div>
-                          <label className="block text-sm font-bold text-green-900 mb-2">
-                            Early Bird Price (₹) *
-                          </label>
-                          <input
-                            type="number"
-                            min="0"
-                            value={tripData.earlyBirdPrice}
-                            onChange={(e) => handleInputChange('earlyBirdPrice', e.target.value)}
-                            placeholder="e.g., 12000"
-                            className="w-full px-4 py-3 border border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent font-medium"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-bold text-green-900 mb-2">
-                            Valid Until *
-                          </label>
-                          <input
-                            type="date"
-                            value={tripData.earlyBirdValidUntil}
-                            onChange={(e) => handleInputChange('earlyBirdValidUntil', e.target.value)}
-                            className="w-full px-4 py-3 border border-green-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent font-medium"
-                          />
-                          <p className="text-xs text-green-700 mt-1">
-                            After this date, regular price will apply
-                          </p>
-                        </div>
-
-                        {tripData.earlyBirdPrice && tripData.price && (
-                          <div className="p-4 bg-white rounded-xl border-2 border-green-300">
-                            <p className="text-sm text-green-900 mb-1">Discount:</p>
-                            <p className="text-2xl font-black text-green-600">
-                              ₹{tripData.price - tripData.earlyBirdPrice} OFF ({Math.round(((tripData.price - tripData.earlyBirdPrice) / tripData.price) * 100)}%)
-                            </p>
-                          </div>
-                        )}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Seat Lock Amount */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Seat Lock Amount (₹) *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={tripData.seatLockAmount}
-                    onChange={(e) => handleInputChange('seatLockAmount', e.target.value)}
-                    placeholder="e.g., 3000"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                  <p className="text-sm text-slate-500 mt-1">
-                    Minimum amount to reserve a seat. Remaining amount due before trip departure.
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Itinerary Tab */}
-            {currentTab === 'itinerary' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-black text-slate-800">Day-by-Day Itinerary</h2>
-                  <button
-                    onClick={addItineraryDay}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Day</span>
-                  </button>
-                </div>
-
-                {tripData.itinerary.map((day, dayIndex) => (
-                  <motion.div
-                    key={dayIndex}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6"
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-black text-blue-900">Day {day.day}</h3>
-                      {tripData.itinerary.length > 1 && (
-                        <button
-                          onClick={() => removeItineraryDay(dayIndex)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="space-y-4">
-                      {/* Day Title */}
-                      <div>
-                        <label className="block text-sm font-bold text-blue-900 mb-2">
-                          Day Title *
-                        </label>
-                        <input
-                          type="text"
-                          value={day.title}
-                          onChange={(e) => handleItineraryChange(dayIndex, 'title', e.target.value)}
-                          placeholder="e.g., Arrival & Orientation"
-                          className="w-full px-4 py-3 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                        />
-                      </div>
-
-                      {/* Activities */}
-                      <div>
-                        <label className="block text-sm font-bold text-blue-900 mb-2">
-                          Activities
-                        </label>
-                        {day.activities.map((activity, actIndex) => (
-                          <div key={actIndex} className="flex items-center space-x-2 mb-2">
-                            <input
-                              type="text"
-                              value={activity}
-                              onChange={(e) => handleItineraryArrayChange(dayIndex, 'activities', actIndex, e.target.value)}
-                              placeholder="e.g., Morning trek to base camp"
-                              className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            {day.activities.length > 1 && (
-                              <button
-                                onClick={() => removeItineraryArrayItem(dayIndex, 'activities', actIndex)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => addItineraryArrayItem(dayIndex, 'activities')}
-                          className="text-sm flex items-center space-x-1 px-3 py-1 text-blue-700 hover:bg-blue-100 rounded-lg font-medium"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Add Activity</span>
-                        </button>
-                      </div>
-
-                      {/* Meals */}
-                      <div>
-                        <label className="block text-sm font-bold text-blue-900 mb-2">
-                          Meals Included
-                        </label>
-                        {day.meals.map((meal, mealIndex) => (
-                          <div key={mealIndex} className="flex items-center space-x-2 mb-2">
-                            <input
-                              type="text"
-                              value={meal}
-                              onChange={(e) => handleItineraryArrayChange(dayIndex, 'meals', mealIndex, e.target.value)}
-                              placeholder="e.g., Breakfast, Lunch, Dinner"
-                              className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                            />
-                            {day.meals.length > 1 && (
-                              <button
-                                onClick={() => removeItineraryArrayItem(dayIndex, 'meals', mealIndex)}
-                                className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
-                              >
-                                <Minus className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
-                        <button
-                          onClick={() => addItineraryArrayItem(dayIndex, 'meals')}
-                          className="text-sm flex items-center space-x-1 px-3 py-1 text-blue-700 hover:bg-blue-100 rounded-lg font-medium"
-                        >
-                          <Plus className="w-3 h-3" />
-                          <span>Add Meal</span>
-                        </button>
-                      </div>
-
-                      {/* Accommodation */}
-                      <div>
-                        <label className="block text-sm font-bold text-blue-900 mb-2">
-                          Accommodation
-                        </label>
-                        <input
-                          type="text"
-                          value={day.accommodation}
-                          onChange={(e) => handleItineraryChange(dayIndex, 'accommodation', e.target.value)}
-                          placeholder="e.g., 3-star Hotel, Camping, Homestay"
-                          className="w-full px-4 py-3 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                        />
-                      </div>
-
-                      {/* Key Notes (Optional) */}
-                      <div>
-                        <label className="block text-sm font-bold text-blue-900 mb-2">
-                          Key Notes (Optional)
-                        </label>
-                        <textarea
-                          value={day.notes}
-                          onChange={(e) => handleItineraryChange(dayIndex, 'notes', e.target.value)}
-                          placeholder="Any important notes or highlights for this day (optional)..."
-                          rows={2}
-                          className="w-full px-4 py-3 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-
-            {/* Details Tab */}
-            {currentTab === 'details' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-black text-slate-800 mb-6">Trip Details</h2>
-
-                {/* Highlights */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Trip Highlights
-                  </label>
-                  {tripData.highlights.map((highlight, index) => (
-                    <div key={index} className="flex items-center space-x-2 mb-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-blue-900 mb-2">
+                        Day Title *
+                      </label>
                       <input
                         type="text"
-                        value={highlight}
-                        onChange={(e) => handleArrayChange('highlights', index, e.target.value)}
-                        placeholder="e.g., Trek to 15,000 ft altitude"
-                        className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                        value={day.title}
+                        onChange={(e) => handleItineraryChange(dayIndex, 'title', e.target.value)}
+                        placeholder="e.g., Arrival & Orientation"
+                        className="w-full px-4 py-3 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
-                      {tripData.highlights.length > 1 && (
-                        <button
-                          onClick={() => removeArrayItem('highlights', index)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
-                        >
-                          <Minus className="w-5 h-5" />
-                        </button>
-                      )}
                     </div>
-                  ))}
-                  <button
-                    onClick={() => addArrayItem('highlights')}
-                    className="flex items-center space-x-2 px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg font-medium"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Highlight</span>
-                  </button>
-                </div>
 
-                {/* Inclusions */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    What's Included
-                  </label>
+                    <div>
+                      <label className="block text-sm font-medium text-blue-900 mb-2">
+                        Accommodation
+                      </label>
+                      <input
+                        type="text"
+                        value={day.accommodation}
+                        onChange={(e) => handleItineraryChange(dayIndex, 'accommodation', e.target.value)}
+                        placeholder="e.g., Hotel in Manali"
+                        className="w-full px-4 py-3 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-blue-900 mb-2">
+                      Activities
+                    </label>
+                    {day.activities.map((activity, actIndex) => (
+                      <div key={actIndex} className="flex items-center space-x-2 mb-2">
+                        <input
+                          type="text"
+                          value={activity}
+                          onChange={(e) => handleItineraryArrayChange(dayIndex, 'activities', actIndex, e.target.value)}
+                          placeholder="e.g., Morning trek to base camp"
+                          className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        />
+                        {day.activities.length > 1 && (
+                          <button
+                            onClick={() => {
+                              const newActivities = day.activities.filter((_, i) => i !== actIndex);
+                              handleItineraryChange(dayIndex, 'activities', newActivities);
+                            }}
+                            className="p-1 text-red-600 hover:bg-red-100 rounded"
+                          >
+                            <Minus className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const newActivities = [...day.activities, ''];
+                        handleItineraryChange(dayIndex, 'activities', newActivities);
+                      }}
+                      className="flex items-center space-x-1 px-3 py-1 text-blue-600 hover:bg-blue-100 rounded-lg text-sm"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Activity</span>
+                    </button>
+                  </div>
+
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-blue-900 mb-2">
+                      Notes
+                    </label>
+                    <textarea
+                      value={day.notes}
+                      onChange={(e) => handleItineraryChange(dayIndex, 'notes', e.target.value)}
+                      placeholder="Additional notes for this day..."
+                      rows={2}
+                      className="w-full px-4 py-3 border border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                    />
+                  </div>
+                </motion.div>
+              ))}
+
+              <button
+                onClick={addItineraryDay}
+                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold mx-auto"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Add Day</span>
+              </button>
+            </div>
+          </motion.div>
+        );
+
+      case 6:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Trip Details</h2>
+              <p className="text-gray-600">Add inclusions, exclusions, and important information</p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Inclusions */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
+                  Inclusions
+                </h3>
+                
+                <div className="space-y-2">
                   {tripData.inclusions.map((inclusion, index) => (
-                    <div key={index} className="flex items-center space-x-2 mb-2">
+                    <div key={index} className="flex items-center space-x-2">
                       <input
                         type="text"
                         value={inclusion}
                         onChange={(e) => handleArrayChange('inclusions', index, e.target.value)}
                         placeholder="e.g., Accommodation, Meals, Transport"
-                        className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                       />
                       {tripData.inclusions.length > 1 && (
                         <button
                           onClick={() => removeArrayItem('inclusions', index)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          className="p-1 text-red-600 hover:bg-red-100 rounded"
                         >
-                          <Minus className="w-5 h-5" />
+                          <Minus className="w-4 h-4" />
                         </button>
                       )}
                     </div>
                   ))}
                   <button
                     onClick={() => addArrayItem('inclusions')}
-                    className="flex items-center space-x-2 px-4 py-2 text-green-600 hover:bg-green-50 rounded-lg font-medium"
+                    className="flex items-center space-x-1 px-3 py-1 text-green-600 hover:bg-green-100 rounded-lg text-sm"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add Inclusion</span>
                   </button>
                 </div>
+              </div>
 
-                {/* Exclusions */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    What's Not Included
-                  </label>
+              {/* Exclusions */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <X className="w-5 h-5 mr-2 text-red-600" />
+                  Exclusions
+                </h3>
+                
+                <div className="space-y-2">
                   {tripData.exclusions.map((exclusion, index) => (
-                    <div key={index} className="flex items-center space-x-2 mb-2">
+                    <div key={index} className="flex items-center space-x-2">
                       <input
                         type="text"
                         value={exclusion}
                         onChange={(e) => handleArrayChange('exclusions', index, e.target.value)}
-                        placeholder="e.g., Personal expenses, Insurance"
-                        className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
+                        placeholder="e.g., Personal expenses, Tips"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                       />
                       {tripData.exclusions.length > 1 && (
                         <button
                           onClick={() => removeArrayItem('exclusions', index)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                          className="p-1 text-red-600 hover:bg-red-100 rounded"
                         >
-                          <Minus className="w-5 h-5" />
+                          <Minus className="w-4 h-4" />
                         </button>
                       )}
                     </div>
                   ))}
                   <button
                     onClick={() => addArrayItem('exclusions')}
-                    className="flex items-center space-x-2 px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg font-medium"
+                    className="flex items-center space-x-1 px-3 py-1 text-red-600 hover:bg-red-100 rounded-lg text-sm"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Add Exclusion</span>
                   </button>
                 </div>
-
-                {/* Additional Notes */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Additional Notes
-                  </label>
-                  <textarea
-                    value={tripData.recommendations}
-                    onChange={(e) => handleInputChange('recommendations', e.target.value)}
-                    placeholder="Any additional information, recommendations, important notes..."
-                    rows={4}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                </div>
               </div>
-            )}
 
-            {/* Requirements Tab */}
-            {currentTab === 'requirements' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-black text-slate-800 mb-6">Requirements & Info</h2>
-
-                {/* Important Things to Note */}
-                <div className="bg-gradient-to-r from-orange-50 to-red-50 border-2 border-orange-200 rounded-xl p-6">
-                  <div className="flex items-center space-x-2 mb-4">
-                    <AlertCircle className="w-6 h-6 text-orange-600" />
-                    <h3 className="text-lg font-bold text-orange-900">Important Things to Note</h3>
-                  </div>
-                  <p className="text-sm text-orange-700 mb-4">These tips are auto-added to every trip. You can add more or remove any.</p>
-                  
+              {/* Important Notes */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
+                  Important Notes
+                </h3>
+                
+                <div className="space-y-2">
                   {tripData.importantNotes.map((note, index) => (
-                    <div key={index} className="flex items-center space-x-2 mb-2">
+                    <div key={index} className="flex items-center space-x-2">
                       <input
                         type="text"
                         value={note}
                         onChange={(e) => handleArrayChange('importantNotes', index, e.target.value)}
-                        placeholder="Add important note..."
-                        className="flex-1 px-4 py-3 border border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent font-medium"
+                        placeholder="e.g., Carry valid ID proof"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
                       />
                       {tripData.importantNotes.length > 1 && (
                         <button
                           onClick={() => removeArrayItem('importantNotes', index)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
+                          className="p-1 text-red-600 hover:bg-red-100 rounded"
                         >
-                          <Minus className="w-5 h-5" />
+                          <Minus className="w-4 h-4" />
                         </button>
                       )}
                     </div>
                   ))}
                   <button
                     onClick={() => addArrayItem('importantNotes')}
-                    className="flex items-center space-x-2 px-4 py-2 text-orange-700 hover:bg-orange-100 rounded-lg font-medium"
+                    className="flex items-center space-x-1 px-3 py-1 text-yellow-600 hover:bg-yellow-100 rounded-lg text-sm"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Add More Tips</span>
+                    <span>Add Note</span>
                   </button>
                 </div>
+              </div>
 
-                {/* Emergency Contact */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Emergency Contact Number
-                  </label>
-                  <input
-                    type="text"
-                    value={tripData.emergencyContact}
-                    onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                    placeholder="e.g., +91-8384826414"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                </div>
+              {/* Cancellation Policy */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Shield className="w-5 h-5 mr-2 text-blue-600" />
+                  Cancellation Policy
+                </h3>
+                
+                <textarea
+                  value={tripData.cancellationPolicy}
+                  onChange={(e) => handleInputChange('cancellationPolicy', e.target.value)}
+                  placeholder="Free cancellation up to 7 days before departure. 50% refund for cancellations 3-7 days before. No refund for cancellations within 3 days."
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                />
+              </div>
+            </div>
+          </motion.div>
+        );
 
-                {/* Best Time to Visit */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Best Time to Visit
-                  </label>
-                  <input
-                    type="text"
-                    value={tripData.bestTimeToVisit}
-                    onChange={(e) => handleInputChange('bestTimeToVisit', e.target.value)}
-                    placeholder="e.g., March to June, September to November"
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
-                </div>
+      case 7:
+        return (
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            className="space-y-8"
+          >
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-2">Review & Publish</h2>
+              <p className="text-gray-600">Review your trip details and choose how to publish</p>
+            </div>
 
-                {/* Cancellation Policy */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Cancellation Policy
-                  </label>
-                  <textarea
-                    value={tripData.cancellationPolicy}
-                    onChange={(e) => handleInputChange('cancellationPolicy', e.target.value)}
-                    placeholder="Describe your cancellation and refund policy..."
-                    rows={3}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent font-medium"
-                  />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Publish Options */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Send className="w-5 h-5 mr-2 text-purple-600" />
+                  Publish Options
+                </h3>
+                
+                <div className="space-y-4">
+                  <div className="space-y-3">
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="publishOption"
+                        value="draft"
+                        checked={publishOption === 'draft'}
+                        onChange={(e) => setPublishOption(e.target.value)}
+                        className="w-4 h-4 text-purple-600"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">Save as Draft</div>
+                        <div className="text-sm text-gray-500">Save for later editing</div>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="publishOption"
+                        value="now"
+                        checked={publishOption === 'now'}
+                        onChange={(e) => setPublishOption(e.target.value)}
+                        className="w-4 h-4 text-purple-600"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">Publish Now</div>
+                        <div className="text-sm text-gray-500">Make trip visible to users immediately</div>
+                      </div>
+                    </label>
+
+                    <label className="flex items-center space-x-3 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="publishOption"
+                        value="scheduled"
+                        checked={publishOption === 'scheduled'}
+                        onChange={(e) => setPublishOption(e.target.value)}
+                        className="w-4 h-4 text-purple-600"
+                      />
+                      <div>
+                        <div className="font-medium text-gray-900">Schedule Publishing</div>
+                        <div className="text-sm text-gray-500">Publish at a specific date and time</div>
+                      </div>
+                    </label>
+                  </div>
+
+                  {publishOption === 'scheduled' && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Publish Date
+                        </label>
+                        <input
+                          type="date"
+                          value={tripData.schedulePublishDate}
+                          onChange={(e) => handleInputChange('schedulePublishDate', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Publish Time
+                        </label>
+                        <input
+                          type="time"
+                          value={tripData.schedulePublishTime}
+                          onChange={(e) => handleInputChange('schedulePublishTime', e.target.value)}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               </div>
-            )}
 
-            {/* Publish Tab */}
-            {currentTab === 'publish' && (
-              <div className="space-y-6">
-                <h2 className="text-2xl font-black text-slate-800 mb-6">Publish Options</h2>
-
-                {/* Publishing Options */}
-                <div className="space-y-4">
-                  {/* Save as Draft */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    onClick={() => setPublishOption('draft')}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                      publishOption === 'draft'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-3 rounded-xl ${publishOption === 'draft' ? 'bg-blue-500' : 'bg-slate-200'}`}>
-                          <Lock className={`w-6 h-6 ${publishOption === 'draft' ? 'text-white' : 'text-slate-600'}`} />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-800">Save as Draft</h3>
-                          <p className="text-sm text-slate-600">Save without publishing. You can publish later.</p>
-                        </div>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={publishOption === 'draft'}
-                        onChange={() => setPublishOption('draft')}
-                        className="w-5 h-5"
-                      />
-                    </div>
-                  </motion.div>
-
-                  {/* Publish Now */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    onClick={() => setPublishOption('now')}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                      publishOption === 'now'
-                        ? 'border-green-500 bg-green-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-3 rounded-xl ${publishOption === 'now' ? 'bg-green-500' : 'bg-slate-200'}`}>
-                          <Zap className={`w-6 h-6 ${publishOption === 'now' ? 'text-white' : 'text-slate-600'}`} />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-800">Publish Now</h3>
-                          <p className="text-sm text-slate-600">Make trip visible and bookable immediately.</p>
-                        </div>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={publishOption === 'now'}
-                        onChange={() => setPublishOption('now')}
-                        className="w-5 h-5"
-                      />
-                    </div>
-                  </motion.div>
-
-                  {/* Schedule Publish */}
-                  <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    onClick={() => setPublishOption('scheduled')}
-                    className={`p-6 rounded-xl border-2 cursor-pointer transition-all ${
-                      publishOption === 'scheduled'
-                        ? 'border-purple-500 bg-purple-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-3 rounded-xl ${publishOption === 'scheduled' ? 'bg-purple-500' : 'bg-slate-200'}`}>
-                          <Calendar className={`w-6 h-6 ${publishOption === 'scheduled' ? 'text-white' : 'text-slate-600'}`} />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-800">Schedule Publish</h3>
-                          <p className="text-sm text-slate-600">Auto-publish at a specific date and time.</p>
-                        </div>
-                      </div>
-                      <input
-                        type="radio"
-                        checked={publishOption === 'scheduled'}
-                        onChange={() => setPublishOption('scheduled')}
-                        className="w-5 h-5"
-                      />
-                    </div>
-
-                    <AnimatePresence>
-                      {publishOption === 'scheduled' && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4"
-                        >
-                          <div>
-                            <label className="block text-sm font-bold text-purple-900 mb-2">
-                              Publish Date
-                            </label>
-                            <input
-                              type="date"
-                              value={tripData.schedulePublishDate}
-                              onChange={(e) => handleInputChange('schedulePublishDate', e.target.value)}
-                              className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-sm font-bold text-purple-900 mb-2">
-                              Publish Time
-                            </label>
-                            <input
-                              type="time"
-                              value={tripData.schedulePublishTime}
-                              onChange={(e) => handleInputChange('schedulePublishTime', e.target.value)}
-                              className="w-full px-4 py-3 border border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent font-medium"
-                            />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                </div>
-
-                {/* Summary */}
-                <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                  <h3 className="font-bold text-slate-800 mb-4">Trip Summary</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Title:</span>
-                      <span className="font-semibold">{tripData.title || 'Not set'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">URL:</span>
-                      <span className="font-semibold text-blue-600">{tripData.urlSlug || 'Not set'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Duration:</span>
-                      <span className="font-semibold">{tripData.duration || 'Not set'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Price:</span>
-                      <span className="font-semibold">₹{tripData.price || '0'}</span>
-                    </div>
-                    {enableEarlyBird && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Early Bird:</span>
-                        <span className="font-semibold text-green-600">₹{tripData.earlyBirdPrice || '0'}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Max Participants:</span>
-                      <span className="font-semibold">{tripData.maxParticipants || '0'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">Publish Option:</span>
-                      <span className="font-semibold capitalize">{publishOption}</span>
-                    </div>
+              {/* Trip Summary */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 shadow-sm border border-blue-200">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                  <Eye className="w-5 h-5 mr-2 text-blue-600" />
+                  Trip Summary
+                </h3>
+                
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Title:</span>
+                    <span className="font-semibold text-blue-900">{tripData.title || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Duration:</span>
+                    <span className="font-semibold text-blue-900">{tripData.duration || 'Not set'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Price:</span>
+                    <span className="font-semibold text-blue-900">₹{tripData.price || '0'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Max Participants:</span>
+                    <span className="font-semibold text-blue-900">{tripData.maxParticipants || '0'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Category:</span>
+                    <span className="font-semibold text-blue-900">{tripData.category}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Difficulty:</span>
+                    <span className="font-semibold text-blue-900">{tripData.difficulty}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-blue-700">Publish Option:</span>
+                    <span className="font-semibold text-blue-900 capitalize">{publishOption}</span>
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </motion.div>
-        </AnimatePresence>
+        );
 
-        {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-sm border border-slate-200/50 p-6"
-        >
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
           <div className="flex items-center justify-between">
-            {/* Left: Cancel or Previous */}
             <div>
-              {currentTab === 'basic' ? (
-                <button
-                  onClick={() => navigate('/admin/trips')}
-                  className="px-6 py-3 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors font-semibold"
-                >
-                  Cancel
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    const currentIndex = tabs.findIndex(t => t.id === currentTab);
-                    if (currentIndex > 0) {
-                      setCurrentTab(tabs[currentIndex - 1].id);
-                    }
-                  }}
-                  className="flex items-center space-x-2 px-6 py-3 border border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors font-semibold"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Previous</span>
-                </button>
-              )}
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">Create New Trip</h1>
+              <p className="text-gray-600">Design an amazing travel experience for your customers</p>
             </div>
-
-            {/* Right: Next or Submit */}
-            <div>
-              {currentTab === 'publish' ? (
-                <button
-                  onClick={handleSubmit}
-                  disabled={isLoading}
-                  className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center space-x-2">
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Creating...</span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center space-x-2">
-                      <CheckCircle className="w-5 h-5" />
-                      <span>
-                        {publishOption === 'draft' ? 'Save Draft' : publishOption === 'now' ? 'Publish Now' : 'Schedule Trip'}
-                      </span>
-                    </span>
-                  )}
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    const currentIndex = tabs.findIndex(t => t.id === currentTab);
-                    if (currentIndex < tabs.length - 1) {
-                      setCurrentTab(tabs[currentIndex + 1].id);
-                    }
-                  }}
-                  className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all duration-200 font-semibold"
-                >
-                  <span>Next</span>
-                  <ArrowLeft className="w-4 h-4 rotate-180" />
-                </button>
-              )}
-            </div>
+            <button
+              onClick={() => navigate('/admin/trips')}
+              className="flex items-center space-x-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span>Back to Trips</span>
+            </button>
           </div>
-        </motion.div>
+        </div>
+
+        {/* Progress Steps */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <div className="flex items-center">
+                  <div
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                      currentStep >= step.id
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                        : 'bg-gray-200 text-gray-500'
+                    }`}
+                  >
+                    {currentStep > step.id ? (
+                      <CheckCircle className="w-6 h-6" />
+                    ) : (
+                      <step.icon className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div className="ml-3">
+                    <div className={`font-semibold ${currentStep >= step.id ? 'text-gray-900' : 'text-gray-500'}`}>
+                      {step.title}
+                    </div>
+                    <div className="text-sm text-gray-500">{step.description}</div>
+                  </div>
+                </div>
+                {index < steps.length - 1 && (
+                  <div
+                    className={`w-16 h-1 mx-4 transition-all ${
+                      currentStep > step.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : 'bg-gray-200'
+                    }`}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 p-8">
+          <AnimatePresence mode="wait">
+            {renderStepContent()}
+          </AnimatePresence>
+        </div>
+
+        {/* Navigation */}
+        <div className="mt-8 flex items-center justify-between">
+          <button
+            onClick={prevStep}
+            disabled={currentStep === 1}
+            className="flex items-center space-x-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Previous</span>
+          </button>
+
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-500">
+              Step {currentStep} of {steps.length}
+            </span>
+            {currentStep < steps.length ? (
+              <button
+                onClick={nextStep}
+                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold"
+              >
+                <span>Next</span>
+                <ArrowLeft className="w-5 h-5 rotate-180" />
+              </button>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={isLoading}
+                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>Creating...</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="w-5 h-5" />
+                    <span>
+                      {publishOption === 'draft' ? 'Save Draft' : publishOption === 'now' ? 'Publish Now' : 'Schedule Trip'}
+                    </span>
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
 };
 
 export default AddNewTrip;
-
