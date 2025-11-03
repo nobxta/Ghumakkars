@@ -131,19 +131,47 @@ const WhatsApp = () => {
   const fetchStatus = async () => {
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        console.warn('📱 No token found for status check');
+        return;
+      }
+
       const { API_BASE_URL } = await import('../../utils/apiConfig');
       const response = await fetch(`${API_BASE_URL}/whatsapp/status`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
+
+      if (!response.ok) {
+        console.error('📱 Status fetch failed:', response.status, response.statusText);
+        return;
+      }
+
       const data = await response.json();
       if (data.success) {
-        setStatus(data.data.status);
-        setQrCode(data.data.qrCode);
+        console.log('📱 Status update:', data.data);
+        setStatus(data.data.status || 'disconnected');
+        if (data.data.qrCode) {
+          setQrCode(data.data.qrCode);
+          if (data.data.status === 'qr_pending') {
+            // Only show success message if QR code is new (wasn't there before)
+            const prevQR = qrCode;
+            if (!prevQR) {
+              setResponse({ type: 'success', text: 'QR Code ready! Scan with WhatsApp to connect.' });
+            }
+          }
+        } else {
+          // Clear QR code if status changed away from qr_pending
+          if (data.data.status !== 'qr_pending') {
+            setQrCode(null);
+          }
+        }
+      } else {
+        console.error('📱 Status fetch error:', data.message);
       }
     } catch (error) {
-      console.error('Error fetching status:', error);
+      console.error('📱 Error fetching status:', error);
     }
   };
 
@@ -246,27 +274,63 @@ Thank you!`
   const login = async () => {
     setIsLoggingIn(true);
     setResponse(null);
+    setQrCode(null); // Clear any existing QR code
     
     try {
       const token = localStorage.getItem('token');
+      if (!token) {
+        setResponse({ type: 'error', text: 'Authentication required. Please login again.' });
+        setIsLoggingIn(false);
+        return;
+      }
+
       const { API_BASE_URL } = await import('../../utils/apiConfig');
+      console.log('📱 WhatsApp Login - Calling:', `${API_BASE_URL}/whatsapp/login`);
+      
       const response = await fetch(`${API_BASE_URL}/whatsapp/login`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
+
+      console.log('📱 WhatsApp Login - Response Status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('📱 WhatsApp Login - Error Response:', errorText);
+        try {
+          const errorData = JSON.parse(errorText);
+          setResponse({ type: 'error', text: errorData.message || `Failed: ${response.status}` });
+        } catch {
+          setResponse({ type: 'error', text: `Failed to generate QR code: ${response.status} ${response.statusText}` });
+        }
+        setIsLoggingIn(false);
+        return;
+      }
       
       const data = await response.json();
+      console.log('📱 WhatsApp Login - Response Data:', data);
+      
       if (data.success) {
-        setResponse({ type: 'success', text: 'QR Code generated! Scan with your WhatsApp to login.' });
-        // Start polling for status updates
+        setResponse({ type: 'success', text: 'QR Code generation started! Checking status...' });
+        // Start polling for status updates immediately
         setIsPolling(true);
+        // Fetch status immediately and then continue polling
+        await fetchStatus();
+        // Continue polling every 3 seconds
+        setTimeout(() => {
+          if (!qrCode && status === 'disconnected') {
+            setResponse({ type: 'warning', text: 'QR code is being generated. Please wait...' });
+          }
+        }, 2000);
       } else {
         setResponse({ type: 'error', text: data.message || 'Failed to generate QR code' });
       }
     } catch (error) {
-      setResponse({ type: 'error', text: 'Failed to generate QR code' });
+      console.error('📱 WhatsApp Login - Exception:', error);
+      setResponse({ type: 'error', text: `Failed to generate QR code: ${error.message}. Please check your connection and try again.` });
     } finally {
       setIsLoggingIn(false);
     }
