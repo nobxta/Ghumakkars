@@ -117,7 +117,7 @@ const LikedTripsPanel = () => {
                 </div>
                 <div className="flex flex-col gap-2">
                   <button 
-                    onClick={() => navigate(isPast ? `/past-trip/${tripId}` : `/trip/${tripId}`)} 
+                    onClick={() => navigate(isPast ? `/past-trip/${trip.urlSlug || tripId}` : `/trip/${trip.urlSlug || tripId}`)} 
                     className="px-3 py-1.5 text-xs bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium whitespace-nowrap"
                   >
                     View

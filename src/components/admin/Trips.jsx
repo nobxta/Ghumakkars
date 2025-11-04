@@ -608,7 +608,7 @@ const Trips = () => {
                           <ActionMenu
                             trip={trip}
                             onEdit={() => navigate(`/admin/trips/edit/${trip._id}`)}
-                            onView={() => navigate(`/trip/${trip._id}`)}
+                            onView={() => navigate(`/trip/${trip.urlSlug || trip._id}`)}
                             onViewBookings={() => openBookingsModal(trip)}
                             onDelete={() => openDeleteModal(trip)}
                             onTogglePublish={() => handleTogglePublish(trip._id, trip.isPublished)}
@@ -671,7 +671,7 @@ const Trips = () => {
                               <span>Edit</span>
                             </button>
                             <button
-                              onClick={() => navigate(`/trip/${trip._id}`)}
+                              onClick={() => navigate(`/trip/${trip.urlSlug || trip._id}`)}
                               className="flex items-center justify-center space-x-1 bg-slate-600 text-white px-3 py-2 rounded-xl text-sm hover:bg-slate-700 transition-colors font-medium"
                             >
                               <Eye className="w-4 h-4" />

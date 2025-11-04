@@ -359,7 +359,7 @@ const PastTripDetails = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 -mt-20 relative z-10">
         {/* Tab Navigation */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200 p-2 mb-6 sticky top-4 z-30">
+        <div className="bg-white/95 backdrop-blur-xl rounded-2xl shadow-lg border border-slate-200 p-2 mb-6 sticky top-6 lg:top-8 z-30">
           <div className="grid grid-cols-4 gap-2">
             {tabs.map((tab) => {
               const Icon = tab.icon;

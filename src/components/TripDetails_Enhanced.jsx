@@ -254,7 +254,7 @@ const TripDetailsEnhanced = () => {
           {/* Left Column - Main Content */}
           <div className="lg:col-span-2">
             {/* Tab Navigation */}
-            <div className="card-premium p-2 mb-6 sticky top-4 z-30">
+            <div className="card-premium p-2 mb-6 sticky top-6 lg:top-8 z-30 bg-white/95 backdrop-blur-xl">
               <div className="grid grid-cols-4 gap-2">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;

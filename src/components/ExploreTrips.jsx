@@ -65,7 +65,7 @@ const ExploreTrips = () => {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
   const [selectedDuration, setSelectedDuration] = useState('');
-  const [priceRange, setPriceRange] = useState([0, 10000]);
+  const [priceRange, setPriceRange] = useState([0, 100000]);
   const [sortBy, setSortBy] = useState('newest');
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -96,19 +96,35 @@ const ExploreTrips = () => {
         setLoading(true);
         const response = await tripService.getTrips();
         
-        if (response.success) {
-          console.log('Fetched trips data:', response.data);
-          console.log('First trip structure:', response.data[0]);
-          setTrips(response.data);
-          setFilteredTrips(response.data);
-        } else {
-          console.error('Failed to fetch trips:', response.message);
-          // Fallback to empty array
-          setTrips([]);
-          setFilteredTrips([]);
+        console.log('API Response:', response);
+        console.log('Response success:', response?.success);
+        console.log('Response data:', response?.data);
+        
+        // Handle different response structures
+        let tripsData = [];
+        
+        if (response && response.success && Array.isArray(response.data)) {
+          tripsData = response.data;
+        } else if (Array.isArray(response)) {
+          // If response is directly an array
+          tripsData = response;
+        } else if (response && Array.isArray(response.data)) {
+          // If response has data array but no success flag
+          tripsData = response.data;
         }
+        
+        console.log('Processed trips data:', tripsData);
+        console.log('Number of trips:', tripsData.length);
+        
+        // Filter out any invalid trips
+        const validTrips = tripsData.filter(trip => trip && trip.title);
+        console.log('Valid trips:', validTrips.length);
+        
+        setTrips(validTrips);
+        setFilteredTrips(validTrips);
       } catch (error) {
         console.error('Error fetching trips:', error);
+        console.error('Error details:', error.response?.data || error.message);
         // Fallback to empty array
         setTrips([]);
         setFilteredTrips([]);
@@ -122,35 +138,53 @@ const ExploreTrips = () => {
 
   // Filter and search functionality
   useEffect(() => {
+    if (!trips || trips.length === 0) {
+      setFilteredTrips([]);
+      return;
+    }
+
     let filtered = trips.filter(trip => {
-      const matchesSearch = trip.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           trip.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (trip.tags && trip.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())));
+      if (!trip || !trip.title) return false;
       
+      // Safe search matching
+      const searchLower = searchTerm.toLowerCase();
+      const titleMatch = trip.title?.toLowerCase().includes(searchLower) || false;
+      const summaryMatch = trip.summary?.toLowerCase().includes(searchLower) || false;
+      const tagsMatch = trip.tags && Array.isArray(trip.tags) 
+        ? trip.tags.some(tag => tag && tag.toLowerCase().includes(searchLower))
+        : false;
+      const matchesSearch = !searchTerm || titleMatch || summaryMatch || tagsMatch;
+      
+      // Safe filter matching
       const matchesCategory = !selectedCategory || trip.category === selectedCategory;
       const matchesDifficulty = !selectedDifficulty || trip.difficulty === selectedDifficulty;
       const matchesDuration = !selectedDuration || trip.duration === selectedDuration;
-      const matchesPrice = trip.price >= priceRange[0] && trip.price <= priceRange[1];
+      const tripPrice = trip.price || 0;
+      const matchesPrice = tripPrice >= priceRange[0] && tripPrice <= priceRange[1];
 
       return matchesSearch && matchesCategory && matchesDifficulty && matchesDuration && matchesPrice;
     });
 
-    // Sort trips
+    // Sort trips with safe comparisons
     switch (sortBy) {
       case 'price-low':
-        filtered.sort((a, b) => a.price - b.price);
+        filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
         break;
       case 'price-high':
-        filtered.sort((a, b) => b.price - a.price);
+        filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
         break;
       case 'rating':
-        filtered.sort((a, b) => b.rating - a.rating);
+        filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
         break;
       case 'newest':
-        filtered.sort((a, b) => new Date(b.departureDate) - new Date(a.departureDate));
+        filtered.sort((a, b) => {
+          const dateA = a.departureDate ? new Date(a.departureDate) : new Date(0);
+          const dateB = b.departureDate ? new Date(b.departureDate) : new Date(0);
+          return dateB - dateA;
+        });
         break;
       case 'popular':
-        filtered.sort((a, b) => b.reviews - a.reviews);
+        filtered.sort((a, b) => (b.reviews || 0) - (a.reviews || 0));
         break;
       default:
         break;
@@ -161,18 +195,21 @@ const ExploreTrips = () => {
 
   const handleTripClick = (trip) => {
     const tripId = trip._id || trip.id;
-    console.log('Clicking on trip with ID:', tripId);
+    const tripSlug = trip.urlSlug;
+    console.log('Clicking on trip with ID:', tripId, 'Slug:', tripSlug);
     console.log('Trip ID type:', typeof tripId);
     if (!tripId || tripId === 'undefined' || tripId === 'null') {
       console.error('Invalid trip ID:', tripId);
       alert('Invalid trip ID. Please try again.');
       return;
     }
+    // Use URL slug if available, otherwise fall back to ID
+    const tripIdentifier = tripSlug || tripId;
     // Navigate to past trip page if trip is past, otherwise regular trip page
     if (isPastTrip(trip.departureDate)) {
-      navigate(`/past-trip/${tripId}`);
+      navigate(`/past-trip/${tripIdentifier}`);
     } else {
-      navigate(`/trip/${tripId}`);
+      navigate(`/trip/${tripIdentifier}`);
     }
   };
 
@@ -381,8 +418,8 @@ const ExploreTrips = () => {
                     <input
                       type="range"
                       min="0"
-                      max="10000"
-                      step="500"
+                      max="100000"
+                      step="1000"
                       value={priceRange[1]}
                       onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
                       className="w-full"

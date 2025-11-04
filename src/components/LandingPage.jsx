@@ -655,7 +655,6 @@ const LandingPage = () => {
             {/* Auto-play indicator */}
             <div className="autoplay-indicator">
               <div className="autoplay-dot"></div>
-              <span>Auto-playing slideshow</span>
             </div>
             
             <Swiper

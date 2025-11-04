@@ -251,6 +251,15 @@ const AddNewTrip = () => {
       setIsLoading(true);
       
       // Clean and validate data
+      // Generate URL slug from title if not provided
+      let urlSlug = tripData.urlSlug?.trim();
+      if (!urlSlug && tripData.title) {
+        urlSlug = tripData.title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-+|-+$/g, '');
+      }
+      
       const cleanedData = {
         ...tripData,
         price: parseFloat(tripData.price) || 0,
@@ -266,7 +275,8 @@ const AddNewTrip = () => {
         startLocation: tripData.startLocation.trim(),
         endLocation: tripData.endLocation.trim(),
         transportMode: tripData.transportMode.trim(),
-        whatsappGroupLink: tripData.whatsappGroupLink.trim()
+        whatsappGroupLink: tripData.whatsappGroupLink.trim(),
+        urlSlug: urlSlug || undefined // Set to undefined if empty string
       };
 
       // Handle publish logic
@@ -314,17 +324,17 @@ const AddNewTrip = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Basic Information</h2>
-              <p className="text-gray-600">Let's start with the essential details about your trip</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Basic Information</h2>
+              <p className="text-sm sm:text-base text-gray-600">Let's start with the essential details about your trip</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Left Column */}
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <FileText className="w-5 h-5 mr-2 text-blue-600" />
                     Trip Details
@@ -340,7 +350,7 @@ const AddNewTrip = () => {
                         value={tripData.title}
                         onChange={(e) => handleInputChange('title', e.target.value)}
                         placeholder="e.g., Amazing Manali Adventure"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                     </div>
 
@@ -353,7 +363,7 @@ const AddNewTrip = () => {
                         value={tripData.urlSlug}
                         onChange={(e) => handleInputChange('urlSlug', e.target.value)}
                         placeholder="amazing-manali-adventure"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       />
                       <p className="text-xs text-gray-500 mt-1">
                         This will be your trip's URL. Use lowercase letters, numbers, and hyphens only.
@@ -390,8 +400,8 @@ const AddNewTrip = () => {
               </div>
 
               {/* Right Column */}
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                     <Tag className="w-5 h-5 mr-2 text-green-600" />
                     Trip Classification
@@ -406,7 +416,7 @@ const AddNewTrip = () => {
                         <select
                           value={tripData.category}
                           onChange={(e) => handleInputChange('category', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         >
                           <option value="Adventure">Adventure</option>
                           <option value="Spiritual">Spiritual</option>
@@ -424,7 +434,7 @@ const AddNewTrip = () => {
                         <select
                           value={tripData.difficulty}
                           onChange={(e) => handleInputChange('difficulty', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         >
                           <option value="Easy">Easy</option>
                           <option value="Moderate">Moderate</option>
@@ -442,7 +452,7 @@ const AddNewTrip = () => {
                         <select
                           value={tripData.tripType}
                           onChange={(e) => handleInputChange('tripType', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         >
                           <option value="Group">Group</option>
                           <option value="Private">Private</option>
@@ -457,7 +467,7 @@ const AddNewTrip = () => {
                         <select
                           value={tripData.ageGroup}
                           onChange={(e) => handleInputChange('ageGroup', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                          className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                         >
                           <option value="All Ages">All Ages</option>
                           <option value="18+">18+</option>
@@ -475,7 +485,7 @@ const AddNewTrip = () => {
                       <select
                         value={tripData.physicalFitness}
                         onChange={(e) => handleInputChange('physicalFitness', e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                        className="w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm sm:text-base border border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                       >
                         <option value="Low">Low - Anyone can participate</option>
                         <option value="Moderate">Moderate - Basic fitness required</option>
@@ -496,16 +506,16 @@ const AddNewTrip = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Duration & Dates</h2>
-              <p className="text-gray-600">Set the trip duration, dates, and locations</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Duration & Dates</h2>
+              <p className="text-sm sm:text-base text-gray-600">Set the trip duration, dates, and locations</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Duration */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Clock className="w-5 h-5 mr-2 text-purple-600" />
                   Trip Duration
@@ -553,7 +563,7 @@ const AddNewTrip = () => {
               </div>
 
               {/* Dates */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Calendar className="w-5 h-5 mr-2 text-blue-600" />
                   Trip Dates
@@ -597,7 +607,7 @@ const AddNewTrip = () => {
               </div>
 
               {/* Locations */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <MapPin className="w-5 h-5 mr-2 text-green-600" />
                   Locations
@@ -664,7 +674,7 @@ const AddNewTrip = () => {
               </div>
 
               {/* Availability */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Users className="w-5 h-5 mr-2 text-orange-600" />
                   Availability
@@ -713,16 +723,16 @@ const AddNewTrip = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Pricing Details</h2>
-              <p className="text-gray-600">Set up pricing, early bird offers, and payment options</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Pricing Details</h2>
+              <p className="text-sm sm:text-base text-gray-600">Set up pricing, early bird offers, and payment options</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Regular Pricing */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <DollarSign className="w-5 h-5 mr-2 text-green-600" />
                   Regular Pricing
@@ -798,16 +808,16 @@ const AddNewTrip = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Trip Images</h2>
-              <p className="text-gray-600">Add cover image and gallery images for your trip</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Trip Images</h2>
+              <p className="text-sm sm:text-base text-gray-600">Add cover image and gallery images for your trip</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Cover Image */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <ImageIcon className="w-5 h-5 mr-2 text-blue-600" />
                   Cover Image
@@ -843,7 +853,7 @@ const AddNewTrip = () => {
               </div>
 
               {/* Gallery Images */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Camera className="w-5 h-5 mr-2 text-purple-600" />
                   Gallery Images
@@ -888,20 +898,20 @@ const AddNewTrip = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Day-by-Day Itinerary</h2>
-              <p className="text-gray-600">Create a detailed itinerary for your trip</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Day-by-Day Itinerary</h2>
+              <p className="text-sm sm:text-base text-gray-600">Create a detailed itinerary for your trip</p>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {tripData.itinerary.map((day, dayIndex) => (
                 <motion.div
                   key={dayIndex}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6"
+                  className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl sm:rounded-2xl p-4 sm:p-6"
                 >
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold text-blue-900">Day {day.day}</h3>
@@ -1013,16 +1023,16 @@ const AddNewTrip = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Trip Details</h2>
-              <p className="text-gray-600">Add inclusions, exclusions, and important information</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Trip Details</h2>
+              <p className="text-sm sm:text-base text-gray-600">Add inclusions, exclusions, and important information</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Inclusions */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
                   Inclusions
@@ -1059,7 +1069,7 @@ const AddNewTrip = () => {
               </div>
 
               {/* Exclusions */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <X className="w-5 h-5 mr-2 text-red-600" />
                   Exclusions
@@ -1096,7 +1106,7 @@ const AddNewTrip = () => {
               </div>
 
               {/* Important Notes */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <AlertCircle className="w-5 h-5 mr-2 text-yellow-600" />
                   Important Notes
@@ -1133,7 +1143,7 @@ const AddNewTrip = () => {
               </div>
 
               {/* Cancellation Policy */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Shield className="w-5 h-5 mr-2 text-blue-600" />
                   Cancellation Policy
@@ -1157,16 +1167,16 @@ const AddNewTrip = () => {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="space-y-8"
+            className="space-y-6 sm:space-y-8"
           >
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Review & Publish</h2>
-              <p className="text-gray-600">Review your trip details and choose how to publish</p>
+            <div className="text-center mb-6 sm:mb-8">
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Review & Publish</h2>
+              <p className="text-sm sm:text-base text-gray-600">Review your trip details and choose how to publish</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
               {/* Publish Options */}
-              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Send className="w-5 h-5 mr-2 text-purple-600" />
                   Publish Options
@@ -1303,32 +1313,70 @@ const AddNewTrip = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">Create New Trip</h1>
-              <p className="text-gray-600">Design an amazing travel experience for your customers</p>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-1 sm:mb-2">Create New Trip</h1>
+              <p className="text-sm sm:text-base text-gray-600">Design an amazing travel experience for your customers</p>
             </div>
             <button
               onClick={() => navigate('/admin/trips')}
-              className="flex items-center space-x-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold"
+              className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-2.5 sm:py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-sm sm:text-base w-full sm:w-auto"
             >
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Back to Trips</span>
             </button>
           </div>
         </div>
 
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
+        {/* Progress Steps - Mobile Scrollable */}
+        <div className="mb-6 sm:mb-8">
+          {/* Mobile: Horizontal Scroll */}
+          <div className="block lg:hidden overflow-x-auto pb-4 -mx-4 px-4 scrollbar-hide">
+            <div className="flex items-center space-x-3 min-w-max">
+              {steps.map((step, index) => (
+                <div key={step.id} className="flex items-center flex-shrink-0">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all ${
+                        currentStep >= step.id
+                          ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                          : 'bg-gray-200 text-gray-500'
+                      }`}
+                    >
+                      {currentStep > step.id ? (
+                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6" />
+                      ) : (
+                        <step.icon className="w-5 h-5 sm:w-6 sm:h-6" />
+                      )}
+                    </div>
+                    <div className="mt-2 text-center max-w-[80px] sm:max-w-[100px]">
+                      <div className={`text-xs sm:text-sm font-semibold ${currentStep >= step.id ? 'text-gray-900' : 'text-gray-500'}`}>
+                        {step.title}
+                      </div>
+                    </div>
+                  </div>
+                  {index < steps.length - 1 && (
+                    <div
+                      className={`w-8 sm:w-12 h-1 mx-2 sm:mx-3 transition-all ${
+                        currentStep > step.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : 'bg-gray-200'
+                      }`}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: Full Layout */}
+          <div className="hidden lg:flex items-center justify-between">
             {steps.map((step, index) => (
-              <div key={step.id} className="flex items-center">
-                <div className="flex items-center">
+              <div key={step.id} className="flex items-center flex-1">
+                <div className="flex items-center flex-1">
                   <div
-                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-all flex-shrink-0 ${
                       currentStep >= step.id
                         ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
                         : 'bg-gray-200 text-gray-500'
@@ -1340,16 +1388,16 @@ const AddNewTrip = () => {
                       <step.icon className="w-6 h-6" />
                     )}
                   </div>
-                  <div className="ml-3">
-                    <div className={`font-semibold ${currentStep >= step.id ? 'text-gray-900' : 'text-gray-500'}`}>
+                  <div className="ml-3 min-w-0">
+                    <div className={`font-semibold text-sm sm:text-base truncate ${currentStep >= step.id ? 'text-gray-900' : 'text-gray-500'}`}>
                       {step.title}
                     </div>
-                    <div className="text-sm text-gray-500">{step.description}</div>
+                    <div className="text-xs sm:text-sm text-gray-500 truncate">{step.description}</div>
                   </div>
                 </div>
                 {index < steps.length - 1 && (
                   <div
-                    className={`w-16 h-1 mx-4 transition-all ${
+                    className={`w-12 h-1 mx-4 transition-all flex-shrink-0 ${
                       currentStep > step.id ? 'bg-gradient-to-r from-blue-600 to-indigo-600' : 'bg-gray-200'
                     }`}
                   />
@@ -1360,49 +1408,49 @@ const AddNewTrip = () => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-white/50 p-8">
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl sm:rounded-3xl shadow-xl border border-white/50 p-4 sm:p-6 lg:p-8">
           <AnimatePresence mode="wait">
             {renderStepContent()}
           </AnimatePresence>
         </div>
 
         {/* Navigation */}
-        <div className="mt-8 flex items-center justify-between">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
           <button
             onClick={prevStep}
             disabled={currentStep === 1}
-            className="flex items-center space-x-2 px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center justify-center space-x-2 px-4 sm:px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base order-2 sm:order-1"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>Previous</span>
           </button>
 
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500">
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-end space-y-2 sm:space-y-0 sm:space-x-4 order-1 sm:order-2">
+            <span className="text-xs sm:text-sm text-gray-500">
               Step {currentStep} of {steps.length}
             </span>
             {currentStep < steps.length ? (
               <button
                 onClick={nextStep}
-                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold"
+                className="flex items-center justify-center space-x-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold text-sm sm:text-base w-full sm:w-auto"
               >
                 <span>Next</span>
-                <ArrowLeft className="w-5 h-5 rotate-180" />
+                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 rotate-180" />
               </button>
             ) : (
               <button
                 onClick={handleSubmit}
                 disabled={isLoading}
-                className="flex items-center space-x-2 px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center justify-center space-x-2 px-6 sm:px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base w-full sm:w-auto"
               >
                 {isLoading ? (
                   <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Creating...</span>
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="w-5 h-5" />
+                    <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                     <span>
                       {publishOption === 'draft' ? 'Save Draft' : publishOption === 'now' ? 'Publish Now' : 'Schedule Trip'}
                     </span>
