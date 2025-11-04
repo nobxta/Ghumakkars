@@ -28,7 +28,8 @@ import {
   Route,
   Star,
   Heart,
-  Share2
+  Share2,
+  Shield
 } from 'lucide-react';
 import tripService from '../../services/tripService';
 
@@ -1028,16 +1029,16 @@ const AddNewTrip = () => {
                 </h3>
                 
                 <div className="space-y-2">
-                  {tripData.inclusions.map((inclusion, index) => (
+                  {(tripData.inclusions || []).map((inclusion, index) => (
                     <div key={index} className="flex items-center space-x-2">
                       <input
                         type="text"
-                        value={inclusion}
+                        value={inclusion || ''}
                         onChange={(e) => handleArrayChange('inclusions', index, e.target.value)}
                         placeholder="e.g., Accommodation, Meals, Transport"
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
                       />
-                      {tripData.inclusions.length > 1 && (
+                      {(tripData.inclusions || []).length > 1 && (
                         <button
                           onClick={() => removeArrayItem('inclusions', index)}
                           className="p-1 text-red-600 hover:bg-red-100 rounded"
@@ -1065,16 +1066,16 @@ const AddNewTrip = () => {
                 </h3>
                 
                 <div className="space-y-2">
-                  {tripData.exclusions.map((exclusion, index) => (
+                  {(tripData.exclusions || []).map((exclusion, index) => (
                     <div key={index} className="flex items-center space-x-2">
                       <input
                         type="text"
-                        value={exclusion}
+                        value={exclusion || ''}
                         onChange={(e) => handleArrayChange('exclusions', index, e.target.value)}
                         placeholder="e.g., Personal expenses, Tips"
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
                       />
-                      {tripData.exclusions.length > 1 && (
+                      {(tripData.exclusions || []).length > 1 && (
                         <button
                           onClick={() => removeArrayItem('exclusions', index)}
                           className="p-1 text-red-600 hover:bg-red-100 rounded"
@@ -1102,16 +1103,16 @@ const AddNewTrip = () => {
                 </h3>
                 
                 <div className="space-y-2">
-                  {tripData.importantNotes.map((note, index) => (
+                  {(tripData.importantNotes || []).map((note, index) => (
                     <div key={index} className="flex items-center space-x-2">
                       <input
                         type="text"
-                        value={note}
+                        value={note || ''}
                         onChange={(e) => handleArrayChange('importantNotes', index, e.target.value)}
                         placeholder="e.g., Carry valid ID proof"
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all"
                       />
-                      {tripData.importantNotes.length > 1 && (
+                      {(tripData.importantNotes || []).length > 1 && (
                         <button
                           onClick={() => removeArrayItem('importantNotes', index)}
                           className="p-1 text-red-600 hover:bg-red-100 rounded"
@@ -1139,7 +1140,7 @@ const AddNewTrip = () => {
                 </h3>
                 
                 <textarea
-                  value={tripData.cancellationPolicy}
+                  value={tripData.cancellationPolicy || ''}
                   onChange={(e) => handleInputChange('cancellationPolicy', e.target.value)}
                   placeholder="Free cancellation up to 7 days before departure. 50% refund for cancellations 3-7 days before. No refund for cancellations within 3 days."
                   rows={4}
